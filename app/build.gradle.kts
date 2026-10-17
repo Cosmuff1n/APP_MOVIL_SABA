@@ -1,3 +1,17 @@
+import java.util.Properties
+
+val envFile = rootProject.file(".env")
+val envProps = Properties()
+if (envFile.exists()) {
+    envFile.inputStream().use { envProps.load(it) }
+}
+// Prioridad: .env > variable de entorno del sistema > fallback solo para compilar
+val apiBaseUrl: String =
+    envProps.getProperty("API_BASE_URL")
+        ?: System.getenv("API_BASE_URL")
+        ?: "https://172-233-15-71.ip.linodeusercontent.com/"
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -17,6 +31,7 @@ android {
         versionName = "1.0"
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.appsaba"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
