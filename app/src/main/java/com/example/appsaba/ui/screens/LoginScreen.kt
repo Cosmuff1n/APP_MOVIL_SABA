@@ -12,29 +12,37 @@ import androidx.compose.ui.unit.dp
 import com.example.appsaba.ui.viewmodel.LoginViewModel
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel, onLoginSuccess: () -> Unit) {
-    val state = viewModel.uiState
+fun LoginScreen(
+    viewModel: LoginViewModel = viewModel(), onLoginSuccess: () -> Unit
+) {
+
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onLoginSuccess()
+        }
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(value = state.rut, onValueChange = {
             viewModel.onRutChange(it)
         }, label = {
             Text("RUT")
-        }
-        )
+        })
 
         OutlinedTextField(
             value = state.password, onValueChange = {
-            viewModel.onPasswordChange(it)
-        }, label = {
-            Text("Contraseña")
-        }, visualTransformation = PasswordVisualTransformation()
+                viewModel.onPasswordChange(it)
+            }, label = {
+                Text("Contraseña")
+            }, visualTransformation = PasswordVisualTransformation()
         )
 
         Button(onClick = {
-            viewModel.login(onSuccess = onLoginSuccess)
+            viewModel.login()
         }) {
-            Text("Ingresar a terreno")
+            Text("Ingresar")
         }
     }
 }
