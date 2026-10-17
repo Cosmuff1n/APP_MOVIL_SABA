@@ -55,4 +55,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("net.openid:appauth:0.11.1")
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended) // Visibility/VisibilityOff viven aquí, no en core
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.android)
 }
