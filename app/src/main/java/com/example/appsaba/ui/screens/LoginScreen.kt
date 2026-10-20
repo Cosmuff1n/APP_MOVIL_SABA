@@ -66,7 +66,7 @@ fun LoginContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AuthCard(
-            title = "SyncPass",
+            title = "App Saba",
             subtitle = "Inicia sesión para acreditar asistencia"
         ) {
             OutlinedTextField(
