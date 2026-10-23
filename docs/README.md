@@ -1,122 +1,42 @@
-# Saba — documentación técnica del MVP
+# Saba — Documentación viva
 
-> Esta carpeta documenta **el proyecto Saba actual**, no un proyecto de ejemplo.
-> Punto de partida real: aplicación Android en Jetpack Compose con un login local sencillo, selección de parking y navegación `login → home`.
+**Versión documental:** 0.3 · **Fecha:** 23 de octubre de 2026  
+**Proyecto:** Saba — aplicación Android para continuidad operacional en estacionamientos  
+**Tecnologías objetivo:** Kotlin, Jetpack Compose, MVVM, Room/SQLite, Cognito (sin Amplify)
 
-## Estado actual del proyecto
+> Este paquete documenta el prototipo de **Figma Make** y propone la estructura de la aplicación Android. **No modifica el proyecto** ni demuestra que las funciones de Figma ya estén programadas en Android.
 
-Actualmente Saba ya tiene:
+## Comienza por aquí
 
-- `MainActivity.kt` levantando la aplicación con Compose.
-- `navigation/AppNavigation.kt` con las rutas `login` y `home`.
-- `ui/screens/LoginScreen.kt`.
-- `ui/screens/HomeScreen.kt`.
-- `ui/state/LoginUiState.kt`.
-- `ui/viewmodel/LoginViewModel.kt`.
-- Login con **RUT + contraseña + parking**.
-- Parking inicial de demostración: **Parking Plaza Italia**.
-- Validación local simple: si los campos requeridos están completos, se permite avanzar al Home.
-- Navegación funcionando al Home.
+1. [01 — Alcance, fuentes y estado real](01_alcance_y_estado.md)
+2. [02 — Mapa de navegación](02_mapa_navegacion.md) — contiene Mermaid
+3. [03 — Fichas de pantallas y acciones](03_pantallas_y_acciones.md)
+4. [04 — Flujo de incidencias](04_flujo_incidencias.md) — contiene Mermaid
+5. [05 — Usuarios, roles y Cognito](05_usuarios_roles_cognito.md)
+6. [06 — Modelo de datos y Room](06_modelo_datos_room.md) — contiene Mermaid
+7. [07 — Arquitectura Android y límites](07_arquitectura_android.md)
+8. [08 — Pruebas y criterios de aceptación](08_pruebas_aceptacion.md)
+9. [09 — Decisiones pendientes y orden de trabajo](09_decisiones_y_roadmap.md)
 
-Todavía **NO** se considera terminado:
+## Convención de evidencia
 
-- Login contra backend real.
-- `StateFlow` como flujo definitivo de estado, si el proyecto aún conserva `mutableStateOf`.
-- Persistencia de sesión.
-- API REST de incidencias.
-- CRUD local con Room para mantenimiento.
-- Control de permisos por roles.
-- Despliegue del backend en EC2.
-- Cliente React.
+- **[FIGMA-IMPLEMENTADO]** La interacción está programada en el prototipo web de Figma Make. NO equivale a implementada en Android ni garantiza backend.
+- **[ANDROID-CONFIRMADO]** El usuario comprobó que esta acción funciona en su aplicación Android.
+- **[ANDROID-PREPARADO]** Se entregó un parche/configuración; no se ha comprobado aquí la compilación o instalación del conjunto final.
+- **[PROPUESTA]** Diseño recomendado que **no** está confirmado por Figma ni por los requisitos originales.
+- **[PENDIENTE]** Especificación o integración no realizada o no validada.
 
-## Objetivo académico del proyecto
+No cambiar una etiqueta a `ANDROID-CONFIRMADO` sin registrar la prueba en `08_pruebas_aceptacion.md`.
 
-Saba debe evolucionar a un sistema de continuidad operacional para estacionamientos. El MVP contempla:
+## Fuentes de referencia
 
-1. Login y selección/contexto de parking.
-2. Dashboard de estado operacional.
-3. Incidencias con CRUD remoto consumido desde Android mediante Retrofit.
-4. Mantenimiento con CRUD local mediante Room/SQLite.
-5. Cuatro roles con vistas/permisos diferenciados.
-6. Backend propio Spring Boot desplegado en EC2.
-7. Base de datos relacional para el backend.
-8. Una versión web React consumiendo la misma API.
+- **Figma Make — prototipo de Saba:** https://www.figma.com/make/2sIynCi1e7J62AysloIzsW/prototipo-de-saba
+- **Código fuente consultado:** `src/App.tsx` y `src/index.css` obtenidos desde Figma Make, el 23-10-2026. Las referencias `App.tsx:XXX` aluden a esta versión, no a Kotlin.
+- **Presentación de caso asociada a Figma:** `MVP_App_M_vil_Saba_-_Prototipos_y_Requerimientos.pptx` (septiembre 2026, uso educativo).
+- **Informe previo:** `Informe_Requerimientos_Estacionamientos.docx`, levantamiento preliminar del 29-09-2026; requerimientos/prioridad aún por validar.
+- **Croquis:** diagrama manuscrito compartido por el usuario, octubre 2026.
+- **Proyecto Android de trabajo:** WIPBEARGAMETWO; el login simulado y la transición al Home fueron probados por el usuario. No se consideró probada ninguna funcionalidad no informada explícitamente.
 
-Los cuatro roles definidos para el diseño son:
+## Cómo mantener al día la documentación
 
-- `ADMIN`
-- `PARKING_MANAGER`
-- `OPERATOR`
-- `TECH_SUPPORT`
-
-Los servicios principales del dashboard son:
-
-- Barreras de entrada.
-- Lectura LPR.
-- Terminales POS.
-- Cajero automático #2.
-
-Estados operacionales sugeridos para el MVP:
-
-- `OPERATIVO`
-- `DEGRADADO`
-- `FUERA_DE_SERVICIO`
-
-## Arquitectura objetivo
-
-```text
-Android Saba (Compose)
-        │
-        │ eventos
-        ▼
-ViewModel + UiState/StateFlow
-        │
-        ▼
-Repository
-   ┌────┴───────────┐
-   │                │
-   ▼                ▼
-Room local       Retrofit
-(Mantenimiento)     │
-                    ▼
-               Spring Boot API
-                    │
-                    ▼
-                PostgreSQL
-
-React web ───────► misma Spring Boot API
-```
-
-## Orden recomendado de los documentos
-
-| Orden | Documento | Para qué sirve |
-|---|---|---|
-| 0 | `caso.md` | Contexto y alcance de Saba. |
-| 1 | `01_login.md` | Evolucionar el login local existente a MVVM + StateFlow y dejarlo preparado para Retrofit. |
-| 2 | `02_home.md` | Construir el dashboard operacional sin romper la navegación ya existente. |
-| 3 | `03_mantenimiento_room.md` | Implementar el CRUD local obligatorio con Room. |
-| 4 | `04_incidencias_api.md` | Implementar el CRUD remoto con Spring Boot + Retrofit. |
-| 5 | `05_roles.md` | Incorporar los cuatro roles y restringir acciones/vistas. |
-| 6 | `06_ec2_y_react.md` | Llevar la API a EC2 y conectar el cliente React. |
-| 7 | `api.md` | Contrato REST objetivo del MVP. |
-| 8 | `roadmap.md` | Orden de implementación completo y checklist del proyecto. |
-
-## Regla de oro de esta carpeta
-
-No reconstruir Saba desde cero cada vez que aparece una guía nueva.
-
-El enfoque es incremental:
-
-```text
-lo que ya funciona
-      ↓
-refactor pequeño
-      ↓
-probar
-      ↓
-agregar una sola capa nueva
-      ↓
-probar otra vez
-```
-
-Si una etapa nueva rompe el proyecto, vuelve al último punto funcional antes de seguir.
+Cuando hagas un cambio funcional: actualiza la ficha de pantalla → el flujo Mermaid → el modelo de datos (si cambió) → el resultado de prueba. Añade el cambio al mismo commit de Git. Evita escribir que se integra con SAU/Cognito o que se actualiza 'en tiempo real' hasta comprobar la conexión real.
