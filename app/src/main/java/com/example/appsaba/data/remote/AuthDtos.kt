@@ -1,7 +1,7 @@
 package com.example.appsaba.data.remote
 
 data class LoginRequest(
-    val username: String,
+    val rut: String,
     val password: String
 )
 
@@ -14,6 +14,6 @@ data class LoginResponse(
 
 data class UserDto(
     val id: Int? = null,
-    val username: String? = null,
+    val rut: String? = null,
     val email: String? = null
 )

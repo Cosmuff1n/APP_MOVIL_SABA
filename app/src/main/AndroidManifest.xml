@@ -23,6 +23,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Retorno específico del logout web de Cognito.
+             La URI del login (/callback) continúa a cargo de AppAuth. -->
+        <activity
+            android:name=".auth.CognitoLogoutRedirectActivity"
+            android:exported="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.example.appsaba"
+                    android:host="cognito"
+                    android:path="/logout" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

@@ -15,6 +15,7 @@ val apiBaseUrl: String =
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -32,6 +33,26 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.appsaba"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+
+        val cognitoVariables = listOf(
+            "COGNITO_ISSUER",
+            "COGNITO_CLIENT_ID",
+            "COGNITO_REDIRECT_URI",
+            "COGNITO_LOGOUT_URI",
+            "COGNITO_SCOPES"
+        )
+
+        cognitoVariables.forEach { key ->
+            val value = envProps.getProperty(key)
+                ?: System.getenv(key)
+                ?: ""
+
+            require(value.isNotBlank()) {
+                "Falta configurar $key en .env"
+            }
+
+            buildConfigField("String", key, "\"$value\"")
+        }
     }
 
     buildTypes {
@@ -62,7 +83,12 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    // Room: runtime + extensiones Kotlin; compilador separado via KSP
+    implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room3.common)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -79,4 +105,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended) // Visibility/VisibilityOff viven aquí, no en core
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+    implementation(project(":cognito-auth"))
+    implementation(platform(libs.androidx.compose.bom))
+
 }

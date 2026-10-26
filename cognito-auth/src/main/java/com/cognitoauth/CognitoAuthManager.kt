@@ -10,7 +10,6 @@ import net.openid.appauth.AuthorizationRequest
 import net.openid.appauth.AuthorizationResponse
 import net.openid.appauth.AuthorizationService
 import net.openid.appauth.AuthorizationServiceConfiguration
-import net.openid.appauth.EndSessionRequest
 import net.openid.appauth.ResponseTypeValues
 import net.openid.appauth.TokenResponse
 import kotlin.coroutines.resume
@@ -125,27 +124,29 @@ class CognitoAuthManager(
     }
 
     /**
-     * Intent para cerrar sesión en el Hosted UI (End Session).
-     * Requiere el idToken del login; si es null usa solo client_id+logout_uri.
+     * Abre /logout de Cognito Hosted UI en el navegador.
+     * El issuer es cognito-idp.<region>.amazonaws.com/<pool>, NO el dominio Hosted UI.
+     * Por eso extraemos el dominio de la authorizationEndpoint descubierta con OIDC.
+     *
+     * Nota: este cierre elimina la cookie del navegador. No revoca refresh tokens.
+     * Mantener el parámetro idToken por compatibilidad con llamadas anteriores.
      */
+    @Suppress("UNUSED_PARAMETER")
     suspend fun buildLogoutIntent(idToken: String? = null): Intent {
-        val cfg = serviceConfiguration()
-        val logoutEndpoint = cfg.endSessionEndpoint
-            ?: Uri.parse(config.issuerUri.trimEnd('/') + "/logout")
-        val builder = EndSessionRequest.Builder(cfg)
-            .setPostLogoutRedirectUri(config.redirectNetUri)
-            .setAdditionalParameters(
-                mapOf(
-                    "client_id" to config.clientId,
-                    "logout_uri" to config.logoutUri,
-                )
-            )
-        if (idToken != null) builder.setIdTokenHint(idToken)
-        // AppAuth deriva el endpoint de cfg; logoutEndpoint queda como fallback documental.
-        @Suppress("UNUSED_VARIABLE")
-        val ignored = logoutEndpoint
-        val request = builder.build()
-        return authService.getEndSessionRequestIntent(request)
+        val authorizationEndpoint = serviceConfiguration().authorizationEndpoint
+        require(authorizationEndpoint.scheme == "https") {
+            "El endpoint de Cognito debe usar HTTPS"
+        }
+        val logoutUrl = authorizationEndpoint.buildUpon()
+            .path("/logout")
+            .clearQuery()
+            .fragment(null)
+            .appendQueryParameter("client_id", config.clientId)
+            .appendQueryParameter("logout_uri", config.logoutUri)
+            .build()
+
+        return Intent(Intent.ACTION_VIEW, logoutUrl)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
     }
 
     fun dispose() = authService.dispose()

@@ -1,0 +1,93 @@
+package com.example.appsaba.ui.navigation
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.appsaba.ui.data.SabaDataScreen
+import com.example.appsaba.ui.guides.GuidesScreen
+import com.example.appsaba.ui.home.HomeScreen
+
+/**
+ * Navegación visual aportada por el grupo, adaptada al flujo de sesión original.
+ * No crea un segundo login ni sustituye el manejo de tokens de MainActivity.
+ */
+private enum class MainSection { HOME, INCIDENTS, GUIDES, MAINTENANCE, ALL_DATA }
+
+private data class MainTab(
+    val label: String,
+    val section: MainSection,
+    val icon: ImageVector
+)
+
+private val mainTabs = listOf(
+    MainTab("Inicio", MainSection.HOME, Icons.Default.Home),
+    MainTab("Incidencias", MainSection.INCIDENTS, Icons.Default.Warning),
+    MainTab("Guías", MainSection.GUIDES, Icons.Default.Info),
+    MainTab("Mantenimiento", MainSection.MAINTENANCE, Icons.Default.Build)
+)
+
+@Composable
+fun SabaMainScaffold(accessToken: String, onLogout: () -> Unit) {
+    var currentSection by rememberSaveable { mutableStateOf(MainSection.HOME) }
+
+    Scaffold(
+        bottomBar = {
+            // El formulario de login vive fuera de este Scaffold. El panel completo
+            // de datos tiene su propia navegación de regreso a Inicio.
+            if (currentSection != MainSection.ALL_DATA) {
+                NavigationBar {
+                    mainTabs.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentSection == tab.section,
+                            onClick = { currentSection = tab.section },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label) }
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(Modifier.fillMaxSize().padding(innerPadding)) {
+            when (currentSection) {
+                MainSection.HOME -> HomeScreen(
+                    accessToken = accessToken,
+                    onLogout = onLogout,
+                    onOpenLocalData = { currentSection = MainSection.ALL_DATA }
+                )
+                // No mostramos los placeholders del equipo: reutilizamos el
+                // ViewModel / Repositories / DAO / SQLite ya funcionales.
+                MainSection.INCIDENTS -> SabaDataScreen(
+                    onBack = { currentSection = MainSection.HOME },
+                    initialTab = 2
+                )
+                MainSection.GUIDES -> GuidesScreen()
+                MainSection.MAINTENANCE -> SabaDataScreen(
+                    onBack = { currentSection = MainSection.HOME },
+                    initialTab = 1
+                )
+                MainSection.ALL_DATA -> SabaDataScreen(
+                    onBack = { currentSection = MainSection.HOME },
+                    initialTab = 0
+                )
+            }
+        }
+    }
+}

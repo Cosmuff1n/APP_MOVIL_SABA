@@ -9,8 +9,8 @@ import com.example.appsaba.data.remote.LoginResponse
 // - si falla (sin red, 401, timeout, JSON roto) -> Result.failure(excepción), sin try/catch explícito.
 // El ViewModel luego hace result.onSuccess { } / .onFailure { } para pasar a isSuccess o loginError.
 class AuthRepository(private val api: AuthApiService) {
-    suspend fun login(username: String, password: String): Result<LoginResponse> =
+    suspend fun login(rut: String, password: String): Result<LoginResponse> =
         runCatching {
-            api.login(LoginRequest(username.trim(), password))
+            api.login(LoginRequest(rut.trim(), password))
         }
 }

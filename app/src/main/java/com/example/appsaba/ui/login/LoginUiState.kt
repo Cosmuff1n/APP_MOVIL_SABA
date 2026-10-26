@@ -1,4 +1,4 @@
-package com.example.appsaba.ui.state
+package com.example.appsaba.ui.login
 
 data class LoginUiState(
     val rut: String = "",
@@ -9,9 +9,9 @@ data class LoginUiState(
     val rutError: String? = null,
     val passwordError: String? = null,
     val loginError: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    val authToken: String? = null // <- agregado 02: guarda el access_token del 200
 ) {
-    // El botón "Ingresar" se habilita solo si hay datos y no se está cargando.
     val canSubmit: Boolean
-        get() = rut.isNotBlank() && password.isNotBlank() && !isLoading
+        get() = !isLoading
 }

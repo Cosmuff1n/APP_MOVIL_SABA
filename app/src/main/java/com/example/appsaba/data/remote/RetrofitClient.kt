@@ -3,6 +3,7 @@ package com.example.appsaba.data.remote
 
 import com.example.appsaba.BuildConfig
 import com.example.appsaba.core.config.AppConfig
+import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -22,12 +23,14 @@ object RetrofitClient {
         // que retorna el mismo objeto ya configurado. Si escribieras 'this.level = ...' sería idéntico.
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG)
-                HttpLoggingInterceptor.Level.BODY
+                HttpLoggingInterceptor.Level.BASIC
             else
                 HttpLoggingInterceptor.Level.NONE
         }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
             .build()
 
         Retrofit.Builder()
