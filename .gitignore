@@ -63,3 +63,10 @@ output.json
 #NDK
 obj/
 .externalNativeBuild
+
+node_modules/
+saba.db
+saba.db-wal
+saba.db-shm
+.env
+*.pem

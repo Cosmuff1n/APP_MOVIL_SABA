@@ -44,7 +44,7 @@ private val mainTabs = listOf(
 )
 
 @Composable
-fun SabaMainScaffold(accessToken: String, onLogout: () -> Unit) {
+fun SabaMainScaffold(accessToken: String, cognitoAccessToken: String? = null, onLogout: () -> Unit) {
     var currentSection by rememberSaveable { mutableStateOf(MainSection.HOME) }
 
     Scaffold(
@@ -69,6 +69,7 @@ fun SabaMainScaffold(accessToken: String, onLogout: () -> Unit) {
             when (currentSection) {
                 MainSection.HOME -> HomeScreen(
                     accessToken = accessToken,
+                    cognitoAccessToken = cognitoAccessToken,
                     onLogout = onLogout,
                     onOpenLocalData = { currentSection = MainSection.ALL_DATA }
                 )

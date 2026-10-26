@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
                 // de Android. Si la app se recrea, se pide iniciar sesión otra vez.
                 var token: String? by remember { mutableStateOf(null) }
                 var isCognitoSession by remember { mutableStateOf(false) }
+                var cognitoAccessToken: String? by remember { mutableStateOf(null) }
                 val scope = rememberCoroutineScope()
 
                 val currentToken = token
@@ -36,20 +37,24 @@ class MainActivity : ComponentActivity() {
                         onLoginSuccess = { t ->
                             token = t
                             isCognitoSession = false
+                            cognitoAccessToken = null
                         },
-                        onCognitoLoginSuccess = { t ->
-                            token = t
+                        onCognitoLoginSuccess = { idToken, accessToken ->
+                            token = idToken
+                            cognitoAccessToken = accessToken
                             isCognitoSession = true
                         }
                     )
                 } else {
                     SabaMainScaffold(
                         accessToken = currentToken,
+                        cognitoAccessToken = cognitoAccessToken,
                         onLogout = {
                             val closeCognito = isCognitoSession
                             // El token deja de estar accesible desde la UI de Saba.
                             token = null
                             isCognitoSession = false
+                            cognitoAccessToken = null
 
                             if (closeCognito) {
                                 scope.launch {
