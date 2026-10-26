@@ -10,5 +10,8 @@ data class LoginUiState(
     val passwordError: String? = null,
     val loginError: String? = null,
     val isSuccess: Boolean = false
-
-)
+) {
+    // El botón "Ingresar" se habilita solo si hay datos y no se está cargando.
+    val canSubmit: Boolean
+        get() = rut.isNotBlank() && password.isNotBlank() && !isLoading
+}
