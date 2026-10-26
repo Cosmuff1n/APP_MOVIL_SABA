@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.appsaba.BuildConfig
 import com.example.appsaba.core.jwt.SessionUser
 import com.example.appsaba.ui.components.AuthCard
 import com.example.appsaba.ui.theme.AppSabaTheme
@@ -71,6 +72,10 @@ fun HomeContent(state: HomeUiState, onLogout: () -> Unit = {}, onOpenLocalData: 
             Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
                 Text("Cerrar sesión")
             }
+        }
+        // Solo en DEBUG y solo GET: no enviamos tokens ni escribimos datos por HTTP.
+        if (BuildConfig.DEBUG) {
+            Ec2ParkingsSection()
         }
     }
 }

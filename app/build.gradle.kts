@@ -33,6 +33,11 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.appsaba"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        // Servicio EC2 independiente del login (no modificar API_BASE_URL).
+        val ec2ApiBaseUrl = envProps.getProperty("EC2_API_BASE_URL")
+            ?: System.getenv("EC2_API_BASE_URL")
+            ?: "http://34.203.14.129/"
+        buildConfigField("String", "EC2_API_BASE_URL", "\"$ec2ApiBaseUrl\"")
 
         val cognitoVariables = listOf(
             "COGNITO_ISSUER",
