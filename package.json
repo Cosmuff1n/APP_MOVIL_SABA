@@ -1,0 +1,9 @@
+{
+  "name": "saba-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Saba REST API: EC2, Express, Cognito and SQLite",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "check": "node --check server.js", "test": "node --test" },
+  "dependencies": { "aws-jwt-verify": "^5.1.1", "express": "^5.1.0" }
+}

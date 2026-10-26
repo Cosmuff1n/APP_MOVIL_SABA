@@ -1,5 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Excepción HTTP solo para compilaciones de desarrollo. -->
-    <application android:networkSecurityConfig="@xml/saba_debug_network_security" />
-</manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application /></manifest>

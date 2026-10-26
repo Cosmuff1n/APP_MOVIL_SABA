@@ -28,17 +28,17 @@ import java.util.Locale
 // Stateful: pide el ViewModel CON su factory (lleva el token). Sin factory crashea al entrar.
 // Ver HomeViewModelFactory en Paso 3 y nota de la corrección.
 @Composable
-fun HomeScreen(accessToken: String, onLogout: () -> Unit = {}, onOpenLocalData: () -> Unit = {}) {
+fun HomeScreen(accessToken: String, cognitoAccessToken: String? = null, onLogout: () -> Unit = {}, onOpenLocalData: () -> Unit = {}) {
     val viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         factory = HomeViewModelFactory(accessToken)
     )
     val state by viewModel.uiState.collectAsState()
-    HomeContent(state = state, onLogout = onLogout, onOpenLocalData = onOpenLocalData)
+    HomeContent(state = state, cognitoAccessToken = cognitoAccessToken, onLogout = onLogout, onOpenLocalData = onOpenLocalData)
 }
 
 // Stateless: dibuja según HomeUiState. Es lo que usa el preview con datos ficticios.
 @Composable
-fun HomeContent(state: HomeUiState, onLogout: () -> Unit = {}, onOpenLocalData: () -> Unit = {}) {
+fun HomeContent(state: HomeUiState, cognitoAccessToken: String? = null, onLogout: () -> Unit = {}, onOpenLocalData: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.Center,
@@ -75,7 +75,7 @@ fun HomeContent(state: HomeUiState, onLogout: () -> Unit = {}, onOpenLocalData: 
         }
         // Solo en DEBUG y solo GET: no enviamos tokens ni escribimos datos por HTTP.
         if (BuildConfig.DEBUG) {
-            Ec2ParkingsSection()
+            Ec2ParkingsSection(accessToken = cognitoAccessToken)
         }
     }
 }

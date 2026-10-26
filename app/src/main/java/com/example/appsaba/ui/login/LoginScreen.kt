@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onLoginSuccess: (token: String) -> Unit = {},
-    onCognitoLoginSuccess: (token: String) -> Unit = onLoginSuccess
+    onCognitoLoginSuccess: (idToken: String, accessToken: String) -> Unit = { idToken, _ -> onLoginSuccess(idToken) }
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -85,7 +85,7 @@ fun LoginScreen(
                         if (!idToken.isNullOrBlank() && !accessToken.isNullOrBlank()) {
                             // El ID Token identifica al usuario en Home.
                             // El Access Token se usará después para nuestra API remota.
-                            onCognitoLoginSuccess(idToken)
+                            onCognitoLoginSuccess(idToken, accessToken)
                             null
                         } else {
                             "Cognito respondió, pero faltan tokens esperados."
