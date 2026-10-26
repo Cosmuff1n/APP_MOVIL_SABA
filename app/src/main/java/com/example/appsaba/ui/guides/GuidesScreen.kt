@@ -1,5 +1,8 @@
 package com.example.appsaba.ui.guides
 
+import android.content.Intent
+import android.net.Uri
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -28,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -194,16 +200,35 @@ fun GuideCard(
 // ------------------------------------------------------------
 @Composable
 fun SupportCard() {
+    // El contexto se necesita para abrir otra app (el teléfono).
+    val context = LocalContext.current
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Canal de soporte", color = Color.Gray, fontSize = 11.sp)
-            Text("Contactos oficiales pendientes de validación", fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Esta pantalla fue aportada por el equipo. Antes de usarla en terreno, " +
-                    "revisar los procedimientos y configurar los datos de contacto reales.",
-                fontSize = 12.sp
-            )
+
+            Text("Canal SAU", color = Color.Gray, fontSize = 11.sp)
+            Text("Mesa de ayuda · Atención 24/7", fontWeight = FontWeight.Bold)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text("Correo de soporte", color = Color.Gray, fontSize = 11.sp)
+            Text("soporte@saba.cl", fontWeight = FontWeight.Bold)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    // ACTION_DIAL abre el marcador con el número escrito. No pide permisos.
+                    // Cambia este número por el real del canal SAU.
+                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+56200000000"))
+                    context.startActivity(intent)
+                }
+            ) {
+                Icon(Icons.Default.Call, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Llamar a soporte")
+            }
         }
     }
 }
