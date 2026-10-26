@@ -76,16 +76,19 @@ fun SabaMainScaffold(accessToken: String, onLogout: () -> Unit) {
                 // ViewModel / Repositories / DAO / SQLite ya funcionales.
                 MainSection.INCIDENTS -> SabaDataScreen(
                     onBack = { currentSection = MainSection.HOME },
-                    initialTab = 2
+                    initialTab = 2,
+                    onLogout = onLogout
                 )
                 MainSection.GUIDES -> GuidesScreen()
                 MainSection.MAINTENANCE -> SabaDataScreen(
                     onBack = { currentSection = MainSection.HOME },
-                    initialTab = 1
+                    initialTab = 1,
+                    onLogout = onLogout
                 )
                 MainSection.ALL_DATA -> SabaDataScreen(
                     onBack = { currentSection = MainSection.HOME },
-                    initialTab = 0
+                    initialTab = 0,
+                    onLogout = onLogout
                 )
             }
         }

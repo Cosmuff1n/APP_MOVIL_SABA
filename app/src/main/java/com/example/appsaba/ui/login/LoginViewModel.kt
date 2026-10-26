@@ -94,6 +94,15 @@ class LoginViewModel(
         }
     }
 
+    // El resultado del login local ya fue entregado a MainActivity.
+    // Limpiarlo impide que al volver a Login tras el logout,
+    // LaunchedEffect vuelva a enviar el token y reingrese a Home.
+    fun onLoginConsumed() {
+        _uiState.update {
+            it.copy(isSuccess = false, authToken = null, password = "")
+        }
+    }
+
     // onErrorShown = la Screen lo llama tras mostrar el Snackbar para limpiar loginError y no repetirlo.
     fun onErrorShown() {
         _uiState.update { it.copy(loginError = null) }

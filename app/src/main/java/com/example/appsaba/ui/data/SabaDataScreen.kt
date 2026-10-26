@@ -32,7 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 private val sections = listOf("Estacionamientos", "Equipos", "Incidencias", "Usuarios")
 
 @Composable
-fun SabaDataScreen(onBack: () -> Unit, initialTab: Int = 0) {
+fun SabaDataScreen(
+    onBack: () -> Unit,
+    initialTab: Int = 0,
+    onLogout: (() -> Unit)? = null
+) {
     val context = LocalContext.current
     val factory = remember(context) { SabaDataViewModelFactory(context) }
     val model: SabaDataViewModel = viewModel(factory = factory)
@@ -69,6 +73,15 @@ fun SabaDataScreen(onBack: () -> Unit, initialTab: Int = 0) {
                 TextButton(onClick = onBack) { Text("← Inicio") }
                 Text("Datos locales de Saba", style = MaterialTheme.typography.titleMedium)
                 if (busy) CircularProgressIndicator(modifier = Modifier.padding(6.dp))
+            }
+            // Room conserva sus registros: cerrar sesión solo limpia la autenticación.
+            if (onLogout != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onLogout) { Text("Cerrar sesión") }
+                }
             }
             Text(
                 "Room + SQLite · Los registros se guardan en este teléfono, no en un servidor.",

@@ -106,7 +106,12 @@ fun LoginScreen(
         onTogglePassword = viewModel::onTogglePasswordVisibility,
         onLoginClick = viewModel::onLoginClick,
         onErrorShown = viewModel::onErrorShown,
-        onLoginSuccess = onLoginSuccess,
+        // Consumimos el éxito solo del login local antes de navegar.
+        // Cognito utiliza onCognitoLoginSuccess por separado.
+        onLoginSuccess = { t ->
+            viewModel.onLoginConsumed()
+            onLoginSuccess(t)
+        },
         onCognitoClick = {
             if (!cognitoBusy) {
                 cognitoBusy = true
