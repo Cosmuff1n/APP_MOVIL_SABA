@@ -71,7 +71,9 @@ fun SabaMainScaffold(accessToken: String, cognitoAccessToken: String? = null, on
                     accessToken = accessToken,
                     cognitoAccessToken = cognitoAccessToken,
                     onLogout = onLogout,
-                    onOpenLocalData = { currentSection = MainSection.ALL_DATA }
+                    onOpenLocalData = { currentSection = MainSection.ALL_DATA },
+                    onOpenGuides = { currentSection = MainSection.GUIDES },
+                    onReportIncident = { currentSection = MainSection.INCIDENTS }
                 )
                 // No mostramos los placeholders del equipo: reutilizamos el
                 // ViewModel / Repositories / DAO / SQLite ya funcionales.
