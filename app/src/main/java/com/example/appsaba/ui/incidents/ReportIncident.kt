@@ -33,6 +33,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
+import com.example.appsaba.data.model.Service
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,12 +49,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val equipos = listOf(
-    "Cajero automático #1",
-    "Cajero automático #2",
-    "Barrera de entrada",
-    "Barrera de salida"
-)
 private val fallas = listOf(
     "Falla en cajero automático",
     "Barrera no abre",
@@ -64,9 +60,16 @@ private val fallas = listOf(
 @Composable
 fun ReportIncidentSheet(
     onDismiss: () -> Unit,
-    onSubmit: (Ticket) -> Unit
+    onSubmit: (Ticket) -> Unit,
+    services: List<Service> = emptyList()
 ) {
-    var equipo by remember { mutableStateOf(equipos[1]) }
+    var selectedServiceId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(services) {
+        if (services.none { it.id == selectedServiceId }) {
+            selectedServiceId = services.firstOrNull()?.id
+        }
+    }
+    val equipo = services.firstOrNull { it.id == selectedServiceId }
     var falla by remember { mutableStateOf(fallas[0]) }
     var estado by remember { mutableStateOf(EstadoEquipo.DEGRADADO) }
     var obs by remember { mutableStateOf("") }
@@ -112,7 +115,18 @@ fun ReportIncidentSheet(
             }
 
             FormField("Equipo afectado") {
-                SimpleDropdown(equipos, equipo) { equipo = it }
+                if (services.isEmpty()) {
+                    Text("No hay equipos en este parking. Agrégalos en Administrar datos locales.", color = TextMuted)
+                } else {
+                    // Usar ID verdadero de Room, nunca nombres ficticios del Preview.
+                    val labels = services.map { "${it.name} (#${it.id})" }
+                    val selectedLabel = equipo?.let { "${it.name} (#${it.id})" }.orEmpty()
+                    SimpleDropdown(labels, selectedLabel) { label ->
+                        selectedServiceId = services.firstOrNull {
+                            "${it.name} (#${it.id})" == label
+                        }?.id
+                    }
+                }
             }
 
             FormField("Tipo de falla") {
@@ -195,24 +209,25 @@ fun ReportIncidentSheet(
                 }
             }
 
-            InfoCard("Registro automático", "SABA-047159 · Charlie Donoso")
+            InfoCard("Registro automático", "Ticket generado y guardado en Room (SQLite)")
             InfoCard(
                 "Actualización en tiempo real",
-                "Al publicar, la incidencia será visible para todo el equipo asignado."
+                "Al publicar, la incidencia se mostrará en el historial local."
             )
 
             Button(
                 onClick = {
                     onSubmit(
                         Ticket(
-                            id = "",
-                            equipo = equipo,
+                            id = selectedServiceId?.toString().orEmpty(),
+                            equipo = equipo?.name.orEmpty(),
                             tipoFalla = falla,
                             estado = estado,
                             observaciones = obs
                         )
                     )
                 },
+                enabled = selectedServiceId != null && falla.isNotBlank() && obs.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

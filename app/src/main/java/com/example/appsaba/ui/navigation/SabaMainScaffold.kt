@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.appsaba.ui.data.SabaDataScreen
 import com.example.appsaba.ui.guides.GuidesScreen
 import com.example.appsaba.ui.home.HomeScreen
+import com.example.appsaba.ui.incidents.IncidentsScreen
 
 /**
  * Navegación visual aportada por el grupo, adaptada al flujo de sesión original.
@@ -75,13 +76,8 @@ fun SabaMainScaffold(accessToken: String, cognitoAccessToken: String? = null, on
                     onOpenGuides = { currentSection = MainSection.GUIDES },
                     onReportIncident = { currentSection = MainSection.INCIDENTS }
                 )
-                // No mostramos los placeholders del equipo: reutilizamos el
-                // ViewModel / Repositories / DAO / SQLite ya funcionales.
-                MainSection.INCIDENTS -> SabaDataScreen(
-                    onBack = { currentSection = MainSection.HOME },
-                    initialTab = 2,
-                    onLogout = onLogout
-                )
+                // Pantalla visual del compañero + CRUD original de Room.
+                MainSection.INCIDENTS -> IncidentsScreen()
                 MainSection.GUIDES -> GuidesScreen()
                 MainSection.MAINTENANCE -> SabaDataScreen(
                     onBack = { currentSection = MainSection.HOME },

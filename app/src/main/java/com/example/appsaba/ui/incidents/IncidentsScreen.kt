@@ -1,5 +1,22 @@
 package com.example.appsaba.ui.incidents
 
+import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.example.appsaba.data.model.Parking
+import com.example.appsaba.data.model.Service
+import com.example.appsaba.ui.data.SabaDataViewModel
+import com.example.appsaba.ui.data.SabaDataViewModelFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,18 +79,84 @@ internal val DangerDot = Color(0xFFE5484D)
 internal val SuccessGreen = Color(0xFF1E9E6A)
 internal val SuccessBg = Color(0xFFE6F6EF)
 
-// Pantalla
+// Pantalla: el diseño de tu compañero queda intacto; los datos y las acciones
+// provienen del MISMO SabaDataViewModel que ya usa Administrar datos locales.
 @Composable
-fun IncidentsScreen(vm: IncidentsViewModel = viewModel()) {
-    val tickets by vm.tickets.collectAsStateWithLifecycle()
-    val showSheet by vm.showSheet.collectAsStateWithLifecycle()
+fun IncidentsScreen() {
+    val context = LocalContext.current
+    val factory = remember(context) { SabaDataViewModelFactory(context.applicationContext) }
+    val model: SabaDataViewModel = viewModel(factory = factory)
+    val parkings by model.parkings.collectAsStateWithLifecycle()
+    val selectedId by model.selectedParkingId.collectAsStateWithLifecycle()
+    val allServices by model.services.collectAsStateWithLifecycle()
+    val allIncidents by model.incidents.collectAsStateWithLifecycle()
+    val feedback by model.feedback.collectAsStateWithLifecycle()
+    val busy by model.busy.collectAsStateWithLifecycle()
+    var showSheet by remember { mutableStateOf(false) }
 
+    // Elegir un parking real y no mostrar datos cruzados cuando cambie.
+    LaunchedEffect(parkings, selectedId) {
+        val valid = selectedId?.takeIf { id -> parkings.any { it.id == id } }
+        val target = valid ?: parkings.firstOrNull()?.id
+        if (target != null && target != selectedId) model.selectParking(target)
+    }
+    LaunchedEffect(feedback) {
+        feedback?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            model.feedbackShown()
+        }
+    }
+    val selected = parkings.firstOrNull { it.id == selectedId }
+    val services = allServices.filter { it.parkingId == selectedId }
+    val incidents = allIncidents.filter { it.parkingId == selectedId }
+    val tickets = incidents.map { incident ->
+        Ticket(
+            id = incident.id.toString(),
+            equipo = services.firstOrNull { it.id == incident.serviceId }?.name
+                ?: "Equipo #${incident.serviceId}",
+            tipoFalla = incident.failureType,
+            estado = when (incident.status) {
+                "fuera-servicio" -> EstadoEquipo.FUERA_DE_SERVICIO
+                "degradado" -> EstadoEquipo.DEGRADADO
+                else -> EstadoEquipo.FUNCIONAL
+            },
+            observaciones = incident.description,
+            activo = !incident.isResolved
+        )
+    }
     IncidentsContent(
         tickets = tickets,
         showSheet = showSheet,
-        onOpenSheet = vm::openSheet,
-        onCloseSheet = vm::closeSheet,
-        onCreateTicket = vm::crearTicket
+        onOpenSheet = { showSheet = true },
+        onCloseSheet = { showSheet = false },
+        onCreateTicket = { ticket ->
+            model.reportIncident(
+                selectedId,
+                services.firstOrNull { it.id == ticket.id.toLongOrNull() }?.id,
+                ticket.tipoFalla,
+                ticket.observaciones,
+                when (ticket.estado) {
+                    EstadoEquipo.FUERA_DE_SERVICIO -> "fuera-servicio"
+                    else -> "degradado"
+                },
+                ""
+            )
+            showSheet = false
+        },
+        parkings = parkings,
+        selectedParkingId = selectedId,
+        services = services,
+        onSelectParking = model::selectParking,
+        onResolveTicket = { ticket, resolver, solution ->
+            incidents.firstOrNull { it.id.toString() == ticket.id }?.let {
+                model.resolveIncident(it, resolver, solution)
+            }
+        },
+        onDeleteTicket = { ticket ->
+            incidents.firstOrNull { it.id.toString() == ticket.id }?.let(model::deleteIncident)
+        },
+        busy = busy,
+        parkingName = selected?.name ?: "SIN ESTACIONAMIENTO"
     )
 }
 
@@ -83,7 +166,15 @@ internal fun IncidentsContent(
     showSheet: Boolean,
     onOpenSheet: () -> Unit,
     onCloseSheet: () -> Unit,
-    onCreateTicket: (Ticket) -> Unit
+    onCreateTicket: (Ticket) -> Unit,
+    parkings: List<Parking> = emptyList(),
+    selectedParkingId: Long? = null,
+    services: List<Service> = emptyList(),
+    onSelectParking: (Long) -> Unit = {},
+    onResolveTicket: (Ticket, String, String) -> Unit = { _, _, _ -> },
+    onDeleteTicket: (Ticket) -> Unit = {},
+    busy: Boolean = false,
+    parkingName: String = "PARKING PLAZA ITALIA"
 ) {
     val activos = tickets.count { it.activo }
 
@@ -94,7 +185,23 @@ internal fun IncidentsContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { IncidentsHeader() }
+        item { IncidentsHeader(parkingName) }
+        if (parkings.size > 1) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    parkings.forEach { parking ->
+                        FilterChip(
+                            selected = selectedParkingId == parking.id,
+                            onClick = { onSelectParking(parking.id) },
+                            label = { Text(parking.name) }
+                        )
+                    }
+                }
+            }
+        }
         item { OperationalBanner(activos) }
         item { ReportButton(onClick = onOpenSheet) }
         item {
@@ -120,7 +227,12 @@ internal fun IncidentsContent(
             item { EmptyState() }
         } else {
             items(tickets, key = { it.id }) { ticket ->
-                TicketItem(ticket)
+                TicketItem(
+                    ticket = ticket,
+                    onResolve = onResolveTicket,
+                    onDelete = onDeleteTicket,
+                    busy = busy
+                )
             }
         }
     }
@@ -129,20 +241,21 @@ internal fun IncidentsContent(
     if (showSheet) {
         ReportIncidentSheet(
             onDismiss = onCloseSheet,
-            onSubmit = onCreateTicket
+            onSubmit = onCreateTicket,
+            services = services
         )
     }
 }
 
 @Composable
-private fun IncidentsHeader() {
+private fun IncidentsHeader(parkingName: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                "PARKING PLAZA ITALIA",
+                parkingName.uppercase(),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = BluePrimary,
@@ -330,13 +443,22 @@ private fun EmptyState() {
 }
 
 @Composable
-private fun TicketItem(ticket: Ticket) {
-    val dotColor = when (ticket.estado) {
+private fun TicketItem(
+    ticket: Ticket,
+    onResolve: (Ticket, String, String) -> Unit,
+    onDelete: (Ticket) -> Unit,
+    busy: Boolean
+) {
+    var showResolve by remember(ticket.id) { mutableStateOf(false) }
+    var showDelete by remember(ticket.id) { mutableStateOf(false) }
+    var resolver by remember(ticket.id) { mutableStateOf("") }
+    var solution by remember(ticket.id) { mutableStateOf("") }
+    val dotColor = if (!ticket.activo) SuccessGreen else when (ticket.estado) {
         EstadoEquipo.FUNCIONAL -> SuccessGreen
         EstadoEquipo.DEGRADADO -> WarnDot
         EstadoEquipo.FUERA_DE_SERVICIO -> DangerDot
     }
-    val estadoTexto = when (ticket.estado) {
+    val estadoTexto = if (!ticket.activo) "Resuelto" else when (ticket.estado) {
         EstadoEquipo.FUNCIONAL -> "Funcional"
         EstadoEquipo.DEGRADADO -> "Degradado"
         EstadoEquipo.FUERA_DE_SERVICIO -> "Fuera de servicio"
@@ -370,7 +492,62 @@ private fun TicketItem(ticket: Ticket) {
                 Spacer(Modifier.height(6.dp))
                 Text(ticket.observaciones, fontSize = 13.sp, color = TextDark)
             }
+            // Acciones originales de Room: resolver y eliminar registros reales.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (ticket.activo) {
+                    TextButton(enabled = !busy, onClick = { showResolve = true }) {
+                        Text("Resolver")
+                    }
+                }
+                TextButton(enabled = !busy, onClick = { showDelete = true }) {
+                    Text("Eliminar ticket", color = DangerDot)
+                }
+            }
         }
+    }
+    if (showResolve) {
+        AlertDialog(
+            onDismissRequest = { showResolve = false },
+            title = { Text("Resolver incidencia") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = resolver,
+                        onValueChange = { resolver = it },
+                        label = { Text("Quién resolvió") }
+                    )
+                    OutlinedTextField(
+                        value = solution,
+                        onValueChange = { if (it.length <= 300) solution = it },
+                        label = { Text("Qué hizo (máx. 300 caracteres)") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = !busy && resolver.isNotBlank() && solution.isNotBlank(),
+                    onClick = {
+                        onResolve(ticket, resolver, solution)
+                        showResolve = false
+                    }
+                ) { Text("Guardar resolución") }
+            },
+            dismissButton = { TextButton(onClick = { showResolve = false }) { Text("Cancelar") } }
+        )
+    }
+    if (showDelete) {
+        AlertDialog(
+            onDismissRequest = { showDelete = false },
+            title = { Text("Eliminar ticket") },
+            text = { Text("¿Eliminar este ticket guardado en Room?") },
+            confirmButton = {
+                TextButton(enabled = !busy, onClick = {
+                    onDelete(ticket)
+                    showDelete = false
+                }) { Text("Eliminar") }
+            },
+            dismissButton = { TextButton(onClick = { showDelete = false }) { Text("Cancelar") } }
+        )
     }
 }
 
