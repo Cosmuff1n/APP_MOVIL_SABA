@@ -8,5 +8,5 @@ data class Ticket(
     val tipoFalla: String,
     val estado: EstadoEquipo,
     val observaciones: String,
-    val activo: Boolean = True
+    val activo: Boolean = true
 )

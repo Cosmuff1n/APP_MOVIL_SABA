@@ -38,9 +38,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.appsaba.ui.theme.AppSabaTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 // colores
@@ -65,6 +67,24 @@ internal val SuccessBg = Color(0xFFE6F6EF)
 fun IncidentsScreen(vm: IncidentsViewModel = viewModel()) {
     val tickets by vm.tickets.collectAsStateWithLifecycle()
     val showSheet by vm.showSheet.collectAsStateWithLifecycle()
+
+    IncidentsContent(
+        tickets = tickets,
+        showSheet = showSheet,
+        onOpenSheet = vm::openSheet,
+        onCloseSheet = vm::closeSheet,
+        onCreateTicket = vm::crearTicket
+    )
+}
+
+@Composable
+internal fun IncidentsContent(
+    tickets: List<Ticket>,
+    showSheet: Boolean,
+    onOpenSheet: () -> Unit,
+    onCloseSheet: () -> Unit,
+    onCreateTicket: (Ticket) -> Unit
+) {
     val activos = tickets.count { it.activo }
 
     LazyColumn(
@@ -76,7 +96,7 @@ fun IncidentsScreen(vm: IncidentsViewModel = viewModel()) {
     ) {
         item { IncidentsHeader() }
         item { OperationalBanner(activos) }
-        item { ReportButton(onClick = vm::openSheet) }
+        item { ReportButton(onClick = onOpenSheet) }
         item {
             Column {
                 Text(
@@ -108,8 +128,8 @@ fun IncidentsScreen(vm: IncidentsViewModel = viewModel()) {
     // Comenta este bloque si todavía no creas ReportIncidentSheet.kt
     if (showSheet) {
         ReportIncidentSheet(
-            onDismiss = vm::closeSheet,
-            onSubmit = vm::crearTicket
+            onDismiss = onCloseSheet,
+            onSubmit = onCreateTicket
         )
     }
 }
@@ -351,5 +371,28 @@ private fun TicketItem(ticket: Ticket) {
                 Text(ticket.observaciones, fontSize = 13.sp, color = TextDark)
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun IncidentsContentPreview() {
+    AppSabaTheme {
+        IncidentsContent(
+            tickets = listOf(
+                Ticket(
+                    id = "1",
+                    equipo = "Barrera de entrada #1",
+                    tipoFalla = "No lee tarjetas RFID",
+                    estado = EstadoEquipo.DEGRADADO,
+                    observaciones = "Revisar antena y cableado",
+                    activo = true
+                )
+            ),
+            showSheet = false,
+            onOpenSheet = {},
+            onCloseSheet = {},
+            onCreateTicket = {}
+        )
     }
 }
