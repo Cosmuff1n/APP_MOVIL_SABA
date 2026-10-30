@@ -1,6 +1,12 @@
 package com.example.appsaba.ui.data
 
 import android.content.Context
+import android.net.Uri
+import android.webkit.MimeTypeMap
+import java.io.File
+import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -26,7 +32,10 @@ import java.util.UUID
  * Room emite resultados mediante Flow y Compose los puede observar.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SabaDataViewModel(private val repositories: SabaRepositories) : ViewModel() {
+class SabaDataViewModel(
+    private val repositories: SabaRepositories,
+    private val appContext: Context
+) : ViewModel() {
     val parkings: StateFlow<List<Parking>> = repositories.parkingRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -161,7 +170,8 @@ class SabaDataViewModel(private val repositories: SabaRepositories) : ViewModel(
     }
 
     fun reportIncident(parkingId: Long?, serviceId: Long?, failure: String,
-                       description: String, severity: String, reporter: String) {
+                       description: String, severity: String, reporter: String,
+                       evidenceUri: Uri? = null) {
         if (parkingId == null || serviceId == null || failure.isBlank() ||
             description.isBlank() || description.length > 240 ||
             severity !in listOf("degradado", "fuera-servicio")
@@ -172,15 +182,47 @@ class SabaDataViewModel(private val repositories: SabaRepositories) : ViewModel(
         execute("Incidencia registrada localmente en SQLite") {
             // UUID evita colisiones entre tickets creados rápidamente en el mismo teléfono.
             val ticket = "SABA-${UUID.randomUUID().toString().take(8).uppercase()}"
+            // El selector de imágenes del formulario de Mantención devuelve un URI temporal.
+            // Se copia a almacenamiento privado ANTES del INSERT, para que la evidencia
+            // sobreviva al cierre de la app. No requiere permisos de galería adicionales.
+            val evidence = evidenceUri?.let { persistEvidence(it) }
             repositories.incidentRepository.insert(
                 Incident(ticketCode = ticket, parkingId = parkingId, serviceId = serviceId,
                     failureType = failure.trim(), description = description.trim(),
-                    status = severity, reporterName = reporter.trim())
+                    status = severity, reporterName = reporter.trim(),
+                    evidenceUri = evidence?.first,
+                    evidenceFileName = evidence?.second,
+                    evidenceMimeType = evidence?.third)
             )
             // MVP local: la actualización del equipo es explícita en Equipos;
             // no afirmamos que el registro se haya enviado al servidor.
         }
     }
+
+    /** Guarda la evidencia seleccionada en archivos privados de Saba. */
+    private suspend fun persistEvidence(uri: Uri): Triple<String, String, String> =
+        withContext(Dispatchers.IO) {
+            val resolver = appContext.contentResolver
+            val mime = resolver.getType(uri) ?: "application/octet-stream"
+            require(mime.startsWith("image/") || mime.startsWith("video/")) {
+                "Selecciona una fotografía o un video válido."
+            }
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "bin"
+            val filename = "evidencia_${UUID.randomUUID()}.$extension"
+            val folder = File(appContext.filesDir, "incident_evidence")
+            require(folder.isDirectory || folder.mkdirs()) { "No se pudo preparar el almacenamiento de evidencias." }
+            val destination = File(folder, filename)
+            try {
+                resolver.openInputStream(uri).use { input ->
+                    requireNotNull(input) { "No se pudo abrir el archivo seleccionado." }
+                    FileOutputStream(destination).use { output -> input.copyTo(output) }
+                }
+            } catch (e: Exception) {
+                destination.delete()
+                throw e
+            }
+            Triple(Uri.fromFile(destination).toString(), filename, mime)
+        }
 
     fun resolveIncident(incident: Incident, resolvedBy: String, solution: String) {
         if (resolvedBy.isBlank() || solution.isBlank() || solution.length > 300) {
@@ -201,11 +243,12 @@ class SabaDataViewModel(private val repositories: SabaRepositories) : ViewModel(
 }
 
 class SabaDataViewModelFactory(context: Context) : ViewModelProvider.Factory {
+    private val appContext = context.applicationContext
     private val repositories = SabaRepositories(context.applicationContext)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(SabaDataViewModel::class.java))
-        return SabaDataViewModel(repositories) as T
+        return SabaDataViewModel(repositories, appContext) as T
     }
 }

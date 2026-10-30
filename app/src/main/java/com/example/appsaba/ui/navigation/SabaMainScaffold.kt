@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -24,6 +25,7 @@ import com.example.appsaba.ui.data.SabaDataScreen
 import com.example.appsaba.ui.guides.GuidesScreen
 import com.example.appsaba.ui.home.HomeScreen
 import com.example.appsaba.ui.incidents.IncidentsScreen
+import com.example.appsaba.ui.maintenance.MaintenanceScreen
 
 /**
  * Navegación visual aportada por el grupo, adaptada al flujo de sesión original.
@@ -47,6 +49,7 @@ private val mainTabs = listOf(
 @Composable
 fun SabaMainScaffold(accessToken: String, cognitoAccessToken: String? = null, onLogout: () -> Unit) {
     var currentSection by rememberSaveable { mutableStateOf(MainSection.HOME) }
+    var dataInitialTab by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
         bottomBar = {
@@ -72,21 +75,19 @@ fun SabaMainScaffold(accessToken: String, cognitoAccessToken: String? = null, on
                     accessToken = accessToken,
                     cognitoAccessToken = cognitoAccessToken,
                     onLogout = onLogout,
-                    onOpenLocalData = { currentSection = MainSection.ALL_DATA },
+                    onOpenLocalData = { dataInitialTab = 0; currentSection = MainSection.ALL_DATA },
                     onOpenGuides = { currentSection = MainSection.GUIDES },
                     onReportIncident = { currentSection = MainSection.INCIDENTS }
                 )
                 // Pantalla visual del compañero + CRUD original de Room.
                 MainSection.INCIDENTS -> IncidentsScreen()
                 MainSection.GUIDES -> GuidesScreen()
-                MainSection.MAINTENANCE -> SabaDataScreen(
-                    onBack = { currentSection = MainSection.HOME },
-                    initialTab = 1,
-                    onLogout = onLogout
+                MainSection.MAINTENANCE -> MaintenanceScreen(
+                    onManageEquipment = { dataInitialTab = 1; currentSection = MainSection.ALL_DATA }
                 )
                 MainSection.ALL_DATA -> SabaDataScreen(
                     onBack = { currentSection = MainSection.HOME },
-                    initialTab = 0,
+                    initialTab = dataInitialTab,
                     onLogout = onLogout
                 )
             }
