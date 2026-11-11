@@ -2,20 +2,18 @@ package com.example.appsaba.ui.login
 
 import androidx.lifecycle.ViewModel
 import com.example.appsaba.BuildConfig
-import com.example.appsaba.data.remote.FakeAuthApiService
 import androidx.lifecycle.viewModelScope
-import com.example.appsaba.data.remote.RetrofitClient
-import com.example.appsaba.data.repository.AuthRepository
+import com.example.appsaba.domain.repository.LoginRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-class LoginViewModel(
-    // repository por constructor con default = permite pasar un fake en tests sin tocar producción.
-    private val repository: AuthRepository = AuthRepository(
-        if (BuildConfig.DEBUG) FakeAuthApiService() else RetrofitClient.authApi
-    )
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val repository: LoginRepository
 ) : ViewModel() {
 
     // CON guion (_uiState) = PRIVADO y MUTABLE: solo el ViewModel puede escribir.
@@ -66,7 +64,7 @@ class LoginViewModel(
                 .onSuccess { response ->
                     // Antes: it.copy(isLoading = false, isSuccess = true)
                     // Ahora: además guarda el token para llevarlo a Home (memoria; DataStore va en 03).
-                    val token = response.access_token.trim()
+                    val token = response.token.trim()
                     _uiState.update {
                         if (token.isBlank()) {
                             it.copy(

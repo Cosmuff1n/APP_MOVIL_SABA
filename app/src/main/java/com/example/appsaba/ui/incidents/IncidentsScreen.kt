@@ -13,10 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.Service
-import com.example.appsaba.ui.data.SabaDataViewModel
-import com.example.appsaba.ui.data.SabaDataViewModelFactory
+import com.example.appsaba.domain.model.Parking
+import com.example.appsaba.domain.model.Service
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -80,19 +78,19 @@ internal val SuccessGreen = Color(0xFF1E9E6A)
 internal val SuccessBg = Color(0xFFE6F6EF)
 
 // Pantalla: el diseño de tu compañero queda intacto; los datos y las acciones
-// provienen del MISMO SabaDataViewModel que ya usa Administrar datos locales.
+// provienen de IncidentsViewModel y la interfaz IncidentRepository (Room).
 @Composable
 fun IncidentsScreen() {
     val context = LocalContext.current
-    val factory = remember(context) { SabaDataViewModelFactory(context.applicationContext) }
-    val model: SabaDataViewModel = viewModel(factory = factory)
-    val parkings by model.parkings.collectAsStateWithLifecycle()
-    val selectedId by model.selectedParkingId.collectAsStateWithLifecycle()
-    val allServices by model.services.collectAsStateWithLifecycle()
-    val allIncidents by model.incidents.collectAsStateWithLifecycle()
-    val feedback by model.feedback.collectAsStateWithLifecycle()
-    val busy by model.busy.collectAsStateWithLifecycle()
-    var showSheet by remember { mutableStateOf(false) }
+    val model: IncidentsViewModel = viewModel()
+    val uiState by model.uiState.collectAsStateWithLifecycle()
+    val parkings = uiState.parkings
+    val selectedId = uiState.selectedParkingId
+    val allServices = uiState.services
+    val allIncidents = uiState.incidents
+    val feedback = uiState.feedback
+    val busy = uiState.busy
+    val showSheet = uiState.isReportSheetVisible
 
     // Elegir un parking real y no mostrar datos cruzados cuando cambie.
     LaunchedEffect(parkings, selectedId) {
@@ -127,8 +125,8 @@ fun IncidentsScreen() {
     IncidentsContent(
         tickets = tickets,
         showSheet = showSheet,
-        onOpenSheet = { showSheet = true },
-        onCloseSheet = { showSheet = false },
+        onOpenSheet = model::openSheet,
+        onCloseSheet = model::closeSheet,
         onCreateTicket = { ticket ->
             model.reportIncident(
                 selectedId,
@@ -141,12 +139,12 @@ fun IncidentsScreen() {
                 },
                 ""
             )
-            showSheet = false
+            model.closeSheet()
         },
         parkings = parkings,
         selectedParkingId = selectedId,
         services = services,
-        onSelectParking = model::selectParking,
+        onSelectParking = { model.selectParking(it) },
         onResolveTicket = { ticket, resolver, solution ->
             incidents.firstOrNull { it.id.toString() == ticket.id }?.let {
                 model.resolveIncident(it, resolver, solution)

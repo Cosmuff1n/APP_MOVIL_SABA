@@ -1,4 +1,4 @@
-package com.example.appsaba.data.model
+package com.example.appsaba.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -14,7 +14,7 @@ import androidx.room.PrimaryKey
     tableName = "services",
     foreignKeys = [
         ForeignKey(
-            entity = Parking::class,
+            entity = ParkingEntity::class,
             parentColumns = ["id"],
             childColumns = ["parkingId"],
             onDelete = ForeignKey.RESTRICT
@@ -22,7 +22,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index(value = ["parkingId"])]
 )
-data class Service(
+data class ServiceEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val parkingId: Long,

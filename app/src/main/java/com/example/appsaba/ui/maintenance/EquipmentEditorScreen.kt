@@ -1,4 +1,4 @@
-package com.example.appsaba.ui.data
+package com.example.appsaba.ui.maintenance
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,14 +23,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.appsaba.data.model.Service
+import com.example.appsaba.domain.model.Service
+
+import com.example.appsaba.ui.data.RecordCard
+import com.example.appsaba.ui.data.ConfirmDelete
 
 private val types = listOf("barriers", "lpr", "pos", "atm")
 private val statuses = listOf("operativo", "degradado", "fuera-servicio")
 
 @Composable
-internal fun ServicesSection(services: List<Service>, parkingId: Long?, busy: Boolean,
-                              model: SabaDataViewModel) {
+internal fun EquipmentEditorScreen(services: List<Service>, parkingId: Long?, busy: Boolean,
+                              model: MaintenanceViewModel) {
     var editing by remember(parkingId) { mutableStateOf<Service?>(null) }
     var name by remember(parkingId) { mutableStateOf("") }
     var type by remember(parkingId) { mutableStateOf(types.first()) }

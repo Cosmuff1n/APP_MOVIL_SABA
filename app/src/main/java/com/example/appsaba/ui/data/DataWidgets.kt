@@ -16,7 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.appsaba.data.model.Parking
+import com.example.appsaba.domain.model.Parking
 
 @Composable
 internal fun ParkingSelector(parkings: List<Parking>, selectedId: Long?, onSelect: (Long) -> Unit) {

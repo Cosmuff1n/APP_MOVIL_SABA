@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.appsaba.data.model.Incident
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.Service
-import com.example.appsaba.data.model.User
+import com.example.appsaba.data.local.entity.IncidentEntity
+import com.example.appsaba.data.local.entity.ParkingEntity
+import com.example.appsaba.data.local.entity.ServiceEntity
+import com.example.appsaba.data.local.entity.UserEntity
 import com.example.appsaba.data.model.RemoteParking
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -15,10 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /** Una base SQLite local para las cuatro Entities de Saba. */
 @Database(
     entities = [
-        User::class,
-        Parking::class,
-        Service::class,
-        Incident::class,
+        UserEntity::class,
+        ParkingEntity::class,
+        ServiceEntity::class,
+        IncidentEntity::class,
         RemoteParking::class
     ],
     version = 2,

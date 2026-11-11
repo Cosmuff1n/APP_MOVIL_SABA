@@ -17,6 +17,7 @@ import com.example.appsaba.ui.login.LoginScreen
 import com.example.appsaba.ui.theme.AppSabaTheme
 import kotlinx.coroutines.launch
 
+@dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

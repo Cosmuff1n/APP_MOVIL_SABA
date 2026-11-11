@@ -1,10 +1,12 @@
 package com.example.appsaba.ui.home
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.appsaba.core.jwt.JwtDecoder
-import com.example.appsaba.data.repository.SabaRepositories
+import com.example.appsaba.domain.repository.ParkingRepository
+import com.example.appsaba.domain.repository.ServiceRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +18,10 @@ import kotlinx.coroutines.launch
 
 // Aquí el token recibe los repositorios para leer estacionamientos y servicios desde Room.
 @OptIn(ExperimentalCoroutinesApi::class)
-class HomeViewModel(
-    accessToken: String,
-    private val repositories: SabaRepositories
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val parkings: ParkingRepository,
+    private val services: ServiceRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -28,14 +31,9 @@ class HomeViewModel(
     private val selectedParkingId = MutableStateFlow<Long?>(null)
 
     init {
-        // 1) Sesión
-        JwtDecoder.decode(accessToken)
-            .onSuccess { user -> _uiState.update { it.copy(user = user) } }
-            .onFailure { _uiState.update { it.copy(decodeError = "Sesión inválida. Vuelve a ingresar.") } }
-
         // 2) Lista de parkings activos. Room avisa solo cuando algo cambia (Flow).
         viewModelScope.launch {
-            repositories.parkingRepository.observeActive().collect { list ->
+            parkings.observeActive().collect { list ->
                 val current = _uiState.value.selectedParkingId
                 val chosen = current?.takeIf { id -> list.any { it.id == id } } ?: list.firstOrNull()?.id
                 selectedParkingId.value = chosen
@@ -47,11 +45,18 @@ class HomeViewModel(
         viewModelScope.launch {
             selectedParkingId.flatMapLatest { id ->
                 if (id == null) flowOf(emptyList())
-                else repositories.serviceRepository.observeByParking(id)
+                else services.observeByParking(id)
             }.collect { services ->
                 _uiState.update { it.copy(services = services) }
             }
         }
+    }
+
+    /** El token sigue en MainActivity: Home solo lee sus claims para mostrarlos. */
+    fun setSessionToken(token: String) {
+        JwtDecoder.decode(token)
+            .onSuccess { user -> _uiState.update { it.copy(user = user, decodeError = null) } }
+            .onFailure { _uiState.update { it.copy(decodeError = "No se pudo leer la sesión") } }
     }
 
     fun selectParking(id: Long) {
@@ -60,11 +65,3 @@ class HomeViewModel(
     }
 }
 
-class HomeViewModelFactory(
-    private val accessToken: String,
-    private val repositories: SabaRepositories
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        HomeViewModel(accessToken, repositories) as T
-}

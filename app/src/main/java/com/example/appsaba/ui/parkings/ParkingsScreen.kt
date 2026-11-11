@@ -1,4 +1,4 @@
-package com.example.appsaba.ui.data
+package com.example.appsaba.ui.parkings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,10 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import com.example.appsaba.data.model.Parking
+import com.example.appsaba.domain.model.Parking
+
+import com.example.appsaba.ui.data.RecordCard
+import com.example.appsaba.ui.data.ConfirmDelete
 
 @Composable
-internal fun ParkingsSection(parkings: List<Parking>, busy: Boolean, model: SabaDataViewModel) {
+internal fun ParkingsScreen(parkings: List<Parking>, busy: Boolean, model: ParkingsViewModel) {
     var editing by remember { mutableStateOf<Parking?>(null) }
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }

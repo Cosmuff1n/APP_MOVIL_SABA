@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,9 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.appsaba.BuildConfig
 import com.example.appsaba.core.jwt.SessionUser
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.Service
-import com.example.appsaba.data.repository.SabaRepositories
+import com.example.appsaba.domain.model.Parking
+import com.example.appsaba.domain.model.Service
 import com.example.appsaba.ui.theme.AppSabaTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,44 +66,22 @@ fun HomeScreen(
     onOpenGuides: () -> Unit = {},
     onReportIncident: () -> Unit = {}
 ) {
-    // El ViewModel ORIGINAL del proyecto principal queda intacto.
-    val appContext = LocalContext.current.applicationContext
-    val repositories = remember(appContext) { SabaRepositories(appContext) }
-    val factory = remember(accessToken, repositories) {
-        HomeViewModelFactory(accessToken, repositories)
-    }
-    val viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-        factory = factory
-    )
+    val viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(accessToken) { viewModel.setSessionToken(accessToken) }
+    HomeContent(
+        state = state,
+        cognitoAccessToken = cognitoAccessToken,
+        parkings = state.parkings,
+        selectedParkingId = state.selectedParkingId,
+        services = state.services,
+        onSelectParking = viewModel::selectParking,
+        onLogout = onLogout,
+        onOpenLocalData = onOpenLocalData,
+        onOpenGuides = onOpenGuides,
+        onReportIncident = onReportIncident
+    )
 
-    // La interfaz de la compañera consulta Room SOLO PARA LEER, sin cambiar el ViewModel.
-    val parkingFlow = remember(repositories) { repositories.parkingRepository.observeActive() }
-    val parkings by parkingFlow.collectAsState(initial = emptyList())
-    var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
-    val selectedParking = parkings.firstOrNull { it.id == selectedId } ?: parkings.firstOrNull()
-    val visibleId = selectedParking?.id
-
-    // key reinicia la observacion cuando cambia el estacionamiento; evita datos anteriores.
-    key(visibleId) {
-        val servicesFlow: Flow<List<Service>> = remember(repositories, visibleId) {
-            if (visibleId == null) flowOf(emptyList())
-            else repositories.serviceRepository.observeByParking(visibleId)
-        }
-        val services by servicesFlow.collectAsState(initial = emptyList())
-        HomeContent(
-            state = state,
-            cognitoAccessToken = cognitoAccessToken,
-            parkings = parkings,
-            selectedParkingId = visibleId,
-            services = services,
-            onSelectParking = { selectedId = it },
-            onLogout = onLogout,
-            onOpenLocalData = onOpenLocalData,
-            onOpenGuides = onOpenGuides,
-            onReportIncident = onReportIncident
-        )
-    }
 }
 
 @Composable

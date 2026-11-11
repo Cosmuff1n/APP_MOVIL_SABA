@@ -1,4 +1,4 @@
-package com.example.appsaba.ui.data
+package com.example.appsaba.ui.users
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,12 +21,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.User
+import com.example.appsaba.domain.model.Parking
+import com.example.appsaba.domain.model.User
+
+import com.example.appsaba.ui.data.RecordCard
+import com.example.appsaba.ui.data.ConfirmDelete
 
 @Composable
-internal fun UsersSection(users: List<User>, parkings: List<Parking>, selectedParkingId: Long?,
-                          busy: Boolean, model: SabaDataViewModel) {
+internal fun UsersScreen(users: List<User>, parkings: List<Parking>, selectedParkingId: Long?,
+                          busy: Boolean, model: UsersViewModel) {
     var editing by remember { mutableStateOf<User?>(null) }
     var name by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
