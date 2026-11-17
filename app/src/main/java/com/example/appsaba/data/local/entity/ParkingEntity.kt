@@ -1,4 +1,4 @@
-package com.example.appsaba.data.model
+package com.example.appsaba.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  * tecnologicos (que se guarda en Service).
  */
 @Entity(tableName = "parkings")
-data class Parking(
+data class ParkingEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val name: String,

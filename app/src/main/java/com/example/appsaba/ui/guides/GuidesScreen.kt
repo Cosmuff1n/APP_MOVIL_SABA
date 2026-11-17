@@ -27,6 +27,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +47,14 @@ import com.example.appsaba.ui.theme.AppSabaTheme
 // ------------------------------------------------------------
 @Composable
 fun GuidesScreen() {
+    val vm: GuidesViewModel = viewModel()
+    val state by vm.uiState.collectAsStateWithLifecycle()
+    GuidesContent(state = state, onToggle = vm::toggle)
+}
+
+/** Composable puro; también funciona en @Preview sin una Activity de Hilt. */
+@Composable
+private fun GuidesContent(state: GuidesUiState, onToggle: (String) -> Unit) {
     // Column ordena todo hacia abajo; verticalScroll permite hacer scroll.
     Column(
         modifier = Modifier
@@ -93,7 +103,9 @@ fun GuidesScreen() {
             step1 = "Verifica que el cajero no tenga una operación o pago en curso.",
             step2 = "Mantén presionado el botón de encendido durante cinco segundos.",
             step3 = "Espera treinta segundos y vuelve a encender el equipo.",
-            step4 = "Comprueba la conexión y realiza una operación de prueba."
+            step4 = "Comprueba la conexión y realiza una operación de prueba.",
+            expanded = "Reinicio de cajeros" in state.expandedGuides,
+            onToggle = { onToggle("Reinicio de cajeros") }
         )
 
         GuideCard(
@@ -102,7 +114,9 @@ fun GuidesScreen() {
             step1 = "Señaliza el acceso afectado y desvía los vehículos a otra vía.",
             step2 = "Verifica que no existan objetos bajo el brazo de la barrera.",
             step3 = "Activa el modo manual desde el control del acceso.",
-            step4 = "Reporta la falla si la barrera no recupera el movimiento."
+            step4 = "Reporta la falla si la barrera no recupera el movimiento.",
+            expanded = "Contingencia por barrera bloqueada" in state.expandedGuides,
+            onToggle = { onToggle("Contingencia por barrera bloqueada") }
         )
 
         GuideCard(
@@ -111,7 +125,9 @@ fun GuidesScreen() {
             step1 = "Confirma que el terminal tenga carga o alimentación eléctrica.",
             step2 = "Revisa el cable de red o la señal móvil disponible.",
             step3 = "Reinicia el POS y espera a que complete la sincronización.",
-            step4 = "Realiza una transacción de prueba de bajo monto."
+            step4 = "Realiza una transacción de prueba de bajo monto.",
+            expanded = "Falla de terminal POS" in state.expandedGuides,
+            onToggle = { onToggle("Falla de terminal POS") }
         )
 
         GuideCard(
@@ -120,7 +136,9 @@ fun GuidesScreen() {
             step1 = "Limpia suavemente el lente y revisa que no esté obstruido.",
             step2 = "Comprueba que la cámara apunte al centro del carril.",
             step3 = "Verifica iluminación, reflejos y visibilidad de la patente.",
-            step4 = "Prueba una nueva lectura y registra evidencia si la falla continúa."
+            step4 = "Prueba una nueva lectura y registra evidencia si la falla continúa.",
+            expanded = "Problemas de lectura LPR" in state.expandedGuides,
+            onToggle = { onToggle("Problemas de lectura LPR") }
         )
 
         Text("AYUDA ESPECIALIZADA", color = Color.Gray, fontSize = 11.sp)
@@ -141,16 +159,15 @@ fun GuideCard(
     step1: String,
     step2: String,
     step3: String,
-    step4: String
+    step4: String,
+    expanded: Boolean = false,
+    onToggle: () -> Unit = {}
 ) {
-    // remember guarda el valor mientras la pantalla se redibuja.
-    // false = cerrada, true = abierta.
-    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded } // al tocar, cambia abierta/cerrada
+            .clickable(onClick = onToggle) // Estado administrado por GuidesViewModel
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -238,6 +255,6 @@ fun SupportCard() {
 @Composable
 fun GuidesScreenPreview() {
     AppSabaTheme {
-        GuidesScreen()
+        GuidesContent(state = GuidesUiState(), onToggle = {})
     }
 }

@@ -1,4 +1,4 @@
-package com.example.appsaba.ui.data
+package com.example.appsaba.ui.incidents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,15 +21,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.appsaba.data.model.Incident
-import com.example.appsaba.data.model.Service
+import com.example.appsaba.domain.model.Incident
+import com.example.appsaba.domain.model.Service
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.example.appsaba.ui.data.RecordCard
+import com.example.appsaba.ui.data.ConfirmDelete
+
 @Composable
-internal fun IncidentsSection(incidents: List<Incident>, services: List<Service>,
-                               parkingId: Long?, busy: Boolean, model: SabaDataViewModel) {
+internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Service>,
+                               parkingId: Long?, busy: Boolean, model: IncidentsViewModel) {
     var serviceId by remember(parkingId) { mutableStateOf<Long?>(null) }
     var failure by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }

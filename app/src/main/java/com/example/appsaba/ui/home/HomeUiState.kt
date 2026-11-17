@@ -1,8 +1,8 @@
 package com.example.appsaba.ui.home
 
 import com.example.appsaba.core.jwt.SessionUser
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.Service
+import com.example.appsaba.domain.model.Parking
+import com.example.appsaba.domain.model.Service
 
 data class HomeUiState(
     val user: SessionUser? = null,

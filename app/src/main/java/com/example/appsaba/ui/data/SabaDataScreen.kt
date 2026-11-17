@@ -1,5 +1,16 @@
 package com.example.appsaba.ui.data
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.appsaba.ui.parkings.ParkingsScreen
+import com.example.appsaba.ui.parkings.ParkingsViewModel
+import com.example.appsaba.ui.maintenance.EquipmentEditorScreen
+import com.example.appsaba.ui.maintenance.MaintenanceViewModel
+import com.example.appsaba.ui.incidents.IncidentsAdminScreen
+import com.example.appsaba.ui.incidents.IncidentsViewModel
+import com.example.appsaba.ui.users.UsersScreen
+import com.example.appsaba.ui.users.UsersViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,29 +48,43 @@ fun SabaDataScreen(
     initialTab: Int = 0,
     onLogout: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    val factory = remember(context) { SabaDataViewModelFactory(context) }
-    val model: SabaDataViewModel = viewModel(factory = factory)
-    val parkings by model.parkings.collectAsState()
-    val services by model.services.collectAsState()
-    val incidents by model.incidents.collectAsState()
-    val users by model.users.collectAsState()
-    val selectedId by model.selectedParkingId.collectAsState()
-    val busy by model.busy.collectAsState()
-    val feedback by model.feedback.collectAsState()
+    val parkingVm: ParkingsViewModel = viewModel()
+    val maintenanceVm: MaintenanceViewModel = viewModel()
+    val incidentsVm: IncidentsViewModel = viewModel()
+    val usersVm: UsersViewModel = viewModel()
+
+    val parkingState by parkingVm.uiState.collectAsStateWithLifecycle()
+    val maintenanceState by maintenanceVm.uiState.collectAsStateWithLifecycle()
+    val incidentsState by incidentsVm.uiState.collectAsStateWithLifecycle()
+    val usersState by usersVm.uiState.collectAsStateWithLifecycle()
+    val parkings = parkingState.parkings
+    var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     val snackbar = remember { SnackbarHostState() }
-    var tab by remember(initialTab) { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
+    var tab by rememberSaveable(initialTab) { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
+    val busy = when (tab) {
+        0 -> parkingState.busy; 1 -> maintenanceState.busy
+        2 -> incidentsState.busy; else -> usersState.busy
+    }
+    val feedback = when (tab) {
+        0 -> parkingState.feedback; 1 -> maintenanceState.feedback
+        2 -> incidentsState.feedback; else -> usersState.feedback
+    }
 
     LaunchedEffect(parkings, selectedId) {
-        if (parkings.isEmpty()) return@LaunchedEffect
-        if (selectedId == null || parkings.none { it.id == selectedId }) {
-            model.selectParking(parkings.first().id)
-        }
+        val valid = selectedId?.takeIf { id -> parkings.any { it.id == id } }
+        if (valid == null) selectedId = parkings.firstOrNull()?.id
     }
-    LaunchedEffect(feedback) {
+    LaunchedEffect(selectedId) {
+        maintenanceVm.selectParking(selectedId)
+        incidentsVm.selectParking(selectedId)
+    }
+    LaunchedEffect(tab, feedback) {
         feedback?.let {
             snackbar.showSnackbar(it)
-            model.feedbackShown()
+            when (tab) {
+                0 -> parkingVm.feedbackShown(); 1 -> maintenanceVm.feedbackShown()
+                2 -> incidentsVm.feedbackShown(); else -> usersVm.feedbackShown()
+            }
         }
     }
 
@@ -95,13 +120,13 @@ fun SabaDataScreen(
                 }
             }
             if (tab != 0) {
-                ParkingSelector(parkings, selectedId, model::selectParking)
+                ParkingSelector(parkings, selectedId) { selectedId = it }
             }
             when (tab) {
-                0 -> ParkingsSection(parkings, busy, model)
-                1 -> ServicesSection(services, selectedId, busy, model)
-                2 -> IncidentsSection(incidents, services, selectedId, busy, model)
-                3 -> UsersSection(users, parkings, selectedId, busy, model)
+                0 -> ParkingsScreen(parkings, busy, parkingVm)
+                1 -> EquipmentEditorScreen(maintenanceState.services, selectedId, busy, maintenanceVm)
+                2 -> IncidentsAdminScreen(incidentsState.incidents, incidentsState.services, selectedId, busy, incidentsVm)
+                3 -> UsersScreen(usersState.users, parkings, selectedId, busy, usersVm)
             }
         }
     }
