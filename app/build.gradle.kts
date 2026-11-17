@@ -1,5 +1,6 @@
 import java.util.Properties
 
+
 val envFile = rootProject.file(".env")
 val envProps = Properties()
 if (envFile.exists()) {
@@ -16,6 +17,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -111,6 +113,8 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(project(":cognito-auth"))
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(platform(libs.androidx.compose.bom))
 
 }
