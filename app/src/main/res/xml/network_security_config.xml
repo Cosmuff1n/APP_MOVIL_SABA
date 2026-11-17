@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <!-- Compatibilidad específica con el backend HTTP EC2 existente de SABA. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">34.203.14.129</domain>
+    </domain-config>
+</network-security-config>

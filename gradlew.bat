@@ -68,6 +68,16 @@ echo location of your Java installation. 1>&2
 goto fail
 
 :execute
+@rem This archive does not contain the generated wrapper JAR. Fetch the official file at first use.
+if not exist "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" (
+    echo Initializing official Gradle wrapper 9.4.1...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $p=Join-Path $env:APP_HOME 'gradle\wrapper\gradle-wrapper.jar'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/gradle/gradle/v9.4.1/gradle/wrapper/gradle-wrapper.jar' -OutFile $p; if ((Get-Item $p).Length -lt 10000) { throw 'Invalid wrapper JAR' }"
+    if errorlevel 1 (
+        echo ERROR: Cannot retrieve the Gradle wrapper JAR. Verify internet access. 1>&2
+        goto fail
+    )
+)
+
 @rem Setup the command line
 
 set CLASSPATH=

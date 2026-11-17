@@ -4,10 +4,13 @@ import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.appsaba.data.local.SabaDatabase
-import com.example.appsaba.data.model.Incident
-import com.example.appsaba.data.model.Parking
-import com.example.appsaba.data.model.Service
-import com.example.appsaba.data.repository.IncidentRepository
+import com.example.appsaba.data.local.datasource.IncidentLocalDataSourceImpl
+import com.example.appsaba.data.local.datasource.ServiceLocalDataSourceImpl
+import com.example.appsaba.data.local.entity.ParkingEntity
+import com.example.appsaba.data.local.entity.ServiceEntity
+import com.example.appsaba.data.repository.IncidentRepositoryImpl
+import com.example.appsaba.data.repository.ServiceRepositoryImpl
+import com.example.appsaba.domain.model.Incident
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -15,7 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Se ejecuta en un dispositivo Android; no modifica saba_database del usuario. */
+/** Prueba de Room sobre base aislada (no altera datos reales de SABA). */
 @RunWith(AndroidJUnit4::class)
 class SabaRoomIntegrationTest {
 
@@ -25,12 +28,13 @@ class SabaRoomIntegrationTest {
         val db = Room.inMemoryDatabaseBuilder(context, SabaDatabase::class.java).build()
         try {
             val parkingId = db.parkingDao().insert(
-                Parking(name = "Parking test", address = "Dirección test", totalSpaces = 40, freeSpaces = 20)
+                ParkingEntity(name = "Parking test", address = "Dirección test", totalSpaces = 40, freeSpaces = 20)
             )
             val serviceId = db.serviceDao().insert(
-                Service(parkingId = parkingId, name = "Barrera", type = "barriers")
+                ServiceEntity(parkingId = parkingId, name = "Barrera", type = "barriers")
             )
-            val repo = IncidentRepository(db.incidentDao(), db.serviceDao())
+            val serviceRepo = ServiceRepositoryImpl(ServiceLocalDataSourceImpl(db.serviceDao()))
+            val repo = IncidentRepositoryImpl(IncidentLocalDataSourceImpl(db.incidentDao()), serviceRepo)
             val incidentId = repo.insert(
                 Incident(ticketCode = "TEST-001", parkingId = parkingId,
                     serviceId = serviceId, failureType = "Atasco", description = "No abre")
@@ -41,10 +45,10 @@ class SabaRoomIntegrationTest {
             repo.update(ticket.copy(isResolved = true, resolvedByName = "Técnico", resolvedAt = 123L))
             assertEquals(0, repo.observeActiveCount(parkingId).first())
 
-            val anotherParkingId = db.parkingDao().insert(Parking(name = "Otro", address = "Otra dirección"))
+            val anotherId = db.parkingDao().insert(ParkingEntity(name = "Otro", address = "Otra dirección"))
             var rejected = false
             try {
-                repo.insert(Incident(ticketCode = "TEST-002", parkingId = anotherParkingId,
+                repo.insert(Incident(ticketCode = "TEST-002", parkingId = anotherId,
                     serviceId = serviceId, failureType = "Falla", description = "Prueba"))
             } catch (_: IllegalArgumentException) {
                 rejected = true
@@ -61,12 +65,12 @@ class SabaRoomIntegrationTest {
         val dbName = "saba_test_persistencia.db"
         context.deleteDatabase(dbName)
         try {
-            val firstDb = Room.databaseBuilder(context, SabaDatabase::class.java, dbName).build()
+            val first = Room.databaseBuilder(context, SabaDatabase::class.java, dbName).build()
             val id: Long
             try {
-                id = firstDb.parkingDao().insert(Parking(name = "Persistente", address = "Prueba"))
+                id = first.parkingDao().insert(ParkingEntity(name = "Persistente", address = "Prueba"))
             } finally {
-                firstDb.close()
+                first.close()
             }
             val reopened = Room.databaseBuilder(context, SabaDatabase::class.java, dbName).build()
             try {

@@ -13,7 +13,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.appsaba.ui.login.LoginScreen
 import com.example.appsaba.ui.login.LoginViewModel
 
-
 @Composable
 fun AppNavigation() {
 
@@ -48,4 +47,3 @@ fun HomeScreen() {
         Text(text = "Hola")
     }
 }
-

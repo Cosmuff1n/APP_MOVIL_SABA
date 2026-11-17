@@ -1,5 +1,8 @@
 package com.example.appsaba.ui.login
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,18 +19,23 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import com.example.appsaba.BuildConfig
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,19 +43,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.appsaba.ui.components.AuthCard
-import com.example.appsaba.ui.theme.AppSabaTheme
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import com.cognitoauth.CognitoAuthManager
 import com.cognitoauth.CognitoAuthResult
+import com.example.appsaba.BuildConfig
 import com.example.appsaba.config.SabaCognitoConfig
+import com.example.appsaba.ui.components.AuthCard
+import com.example.appsaba.ui.theme.AppSabaTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -55,7 +56,11 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onLoginSuccess: (token: String) -> Unit = {},
-    onCognitoLoginSuccess: (idToken: String, accessToken: String) -> Unit = { idToken, _ -> onLoginSuccess(idToken) }
+    onCognitoLoginSuccess: (idToken: String, accessToken: String) -> Unit = { idToken, _ ->
+        onLoginSuccess(idToken)
+    },
+    // Error de Cognito que llega desde fuera (ej. MainActivity). Opcional.
+    cognitoExternalError: String? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -75,27 +80,37 @@ fun LoginScreen(
     val cognitoLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { activityResult ->
-        cognitoManager.exchangeCode(activityResult.data) { authResult ->
-            scope.launch {
-                cognitoBusy = false
-                cognitoMessage = when (authResult) {
-                    is CognitoAuthResult.Success -> {
-                        val idToken = authResult.tokens.idToken
-                        val accessToken = authResult.tokens.accessToken
-                        if (!idToken.isNullOrBlank() && !accessToken.isNullOrBlank()) {
-                            // El ID Token identifica al usuario en Home.
-                            // El Access Token se usará después para nuestra API remota.
-                            onCognitoLoginSuccess(idToken, accessToken)
-                            null
-                        } else {
-                            "Cognito respondió, pero faltan tokens esperados."
+        Log.d(
+            "SabaCognito",
+            "launcher result: code=${activityResult.resultCode} data=${activityResult.data}"
+        )
+        try {
+            cognitoManager.exchangeCode(activityResult.data) { authResult ->
+                scope.launch {
+                    cognitoBusy = false
+                    cognitoMessage = when (authResult) {
+                        is CognitoAuthResult.Success -> {
+                            val idToken = authResult.tokens.idToken
+                            val accessToken = authResult.tokens.accessToken
+                            if (!idToken.isNullOrBlank() && !accessToken.isNullOrBlank()) {
+                                // El ID Token identifica al usuario en Home.
+                                // El Access Token se usará después para nuestra API remota.
+                                onCognitoLoginSuccess(idToken, accessToken)
+                                null
+                            } else {
+                                "Cognito respondió, pero faltan tokens esperados."
+                            }
                         }
+                        is CognitoAuthResult.Failure ->
+                            "Error de Cognito: ${authResult.message}"
+                        CognitoAuthResult.Cancelled -> "Inicio de sesión cancelado."
                     }
-                    is CognitoAuthResult.Failure ->
-                        "Error de Cognito: ${authResult.message}"
-                    CognitoAuthResult.Cancelled -> "Inicio de sesión cancelado."
                 }
             }
+        } catch (e: Exception) {
+            Log.e("SabaCognito", "exchangeCode lanzó excepción", e)
+            cognitoBusy = false
+            cognitoMessage = "Error al procesar el login: ${e.message ?: e.javaClass.simpleName}"
         }
     }
 
@@ -123,14 +138,16 @@ fun LoginScreen(
                         cognitoBusy = false
                         throw cancelled
                     } catch (error: Exception) {
+                        Log.e("SabaCognito", "No se pudo abrir Cognito", error)
                         cognitoBusy = false
-                        cognitoMessage = "No se pudo abrir Cognito: ${error.message ?: "Error desconocido"}"
+                        cognitoMessage =
+                            "No se pudo abrir Cognito: ${error.message ?: "Error desconocido"}"
                     }
                 }
             }
         },
         cognitoBusy = cognitoBusy,
-        cognitoMessage = cognitoMessage
+        cognitoMessage = cognitoMessage ?: cognitoExternalError
     )
 }
 

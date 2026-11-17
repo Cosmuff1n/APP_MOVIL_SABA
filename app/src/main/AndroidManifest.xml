@@ -12,9 +12,11 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppSaba">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,12 +25,29 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Retorno específico del logout web de Cognito.
-             La URI del login (/callback) continúa a cargo de AppAuth. -->
+
+        <!-- Retorno del LOGIN de Cognito (callback).
+             La activity de AppAuth necesita un tema AppCompat o se cierra la app. -->
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.example.appsaba"
+                    android:host="cognito"
+                    android:path="/callback" />
+            </intent-filter>
+        </activity>
+
+        <!-- Retorno del LOGOUT web de Cognito. -->
         <activity
             android:name=".auth.CognitoLogoutRedirectActivity"
             android:exported="true"

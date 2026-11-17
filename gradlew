@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright © 2015-2021 the original authors.
+# Copyright © 2015 the original authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -114,6 +114,19 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
+# Fetch official Gradle wrapper from the pinned release when missing.
+if [ ! -f "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" ]; then
+    url=https://raw.githubusercontent.com/gradle/gradle/v9.4.1/gradle/wrapper/gradle-wrapper.jar
+    if command -v curl >/dev/null 2>&1; then
+        curl -fLsS "$url" -o "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" || exit 1
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$url" -O "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" || exit 1
+    else
+        echo 'Cannot download the official Gradle wrapper; install curl or wget.' >&2
+        exit 1
+    fi
+fi
+
 CLASSPATH="\\\"\\\""
 
 
@@ -200,6 +213,21 @@ if "$cygwin" || "$msys" ; then
     done
 fi
 
+
+# Bootstrap the official wrapper JAR when this archive was provided without Gradle binaries.
+# The JAR is fetched over HTTPS from the Gradle project release tag.
+if [ ! -s "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" ]; then
+    url="https://raw.githubusercontent.com/gradle/gradle/v9.4.1/gradle/wrapper/gradle-wrapper.jar"
+    dest="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fLsS "$url" -o "$dest" || die "Unable to download official Gradle wrapper JAR"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$url" -O "$dest" || die "Unable to download official Gradle wrapper JAR"
+    else
+        die "Missing wrapper JAR. Install curl or wget for initial bootstrap."
+    fi
+    [ "$(wc -c < "$dest")" -gt 10000 ] || die "Downloaded wrapper JAR is invalid"
+fi
 
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
