@@ -1,13 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.example.saba.parking.dto;
 
-/**
- *
- * @author pv-alumno
- */
-public class ParkingDto {
-    
-}
+/** JSON de respuesta, compatible con Ec2ParkingDto.kt (updatedAt en milisegundos). */
+public record ParkingDto(
+        Long id,
+        String name,
+        String address,
+        String commune,
+        int totalSpaces,
+        int freeSpaces,
+        boolean isActive,
+        Long revision,
+        Long updatedAt,
+        String status
+) { }

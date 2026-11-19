@@ -1,13 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
- */
 package com.example.saba.parking.repository;
 
-/**
- *
- * @author pv-alumno
- */
-public interface ParkingRepository {
-    
+import com.example.saba.parking.model.ParkingEntity;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/** Este Repository consulta PostgreSQL; no es ParkingRepository.kt de Android. */
+public interface ParkingRepository extends JpaRepository<ParkingEntity, Long> {
+    List<ParkingEntity> findAllByOrderByNameAsc();
 }
