@@ -1,9 +1,9 @@
-package com.workshop.bff.dto;
+package com.example.saba.bff.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Register request body")
-public record RegisterRequest(
+@Schema(description = "Login request body")
+public record LoginRequest(
         @Schema(example = "charlie", defaultValue = "charlie")
         String username,
 

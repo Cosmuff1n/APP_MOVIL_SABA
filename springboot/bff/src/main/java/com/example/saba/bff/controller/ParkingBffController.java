@@ -1,6 +1,6 @@
-package com.workshop.bff.controller;
+package com.example.saba.bff.controller;
 
-import com.workshop.bff.client.CustomerClient;
+import com.example.saba.bff.client.ParkingClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,48 +19,48 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/customers")
-@Tag(name = "Customers BFF", description = "Customer routes proxied to the customer microservice")
-public class CustomerBffController {
+@RequestMapping("/api/parkings")
+@Tag(name = "Parkings BFF", description = "Parking routes proxied to the parking microservice")
+public class ParkingBffController {
 
-    private final CustomerClient customerClient;
+    private final ParkingClient parkingClient;
 
-    public CustomerBffController(CustomerClient customerClient) {
-        this.customerClient = customerClient;
+    public ParkingBffController(ParkingClient parkingClient) {
+        this.parkingClient = parkingClient;
     }
 
     @GetMapping("/all")
-    @Operation(summary = "List all customers")
+    @Operation(summary = "List all parkings")
     public ResponseEntity<Object> listAll() {
-        return customerClient.getAll();
+        return parkingClient.getAll();
     }
 
     @GetMapping("/id/{id}")
-    @Operation(summary = "Search customer by ID")
-    public ResponseEntity<Object> getCustomerById(
+    @Operation(summary = "Search parking by ID")
+    public ResponseEntity<Object> getParkingById(
             @Parameter(example = "1", schema = @Schema(defaultValue = "1")) @PathVariable Long id) {
-        return customerClient.getById(id);
+        return parkingClient.getById(id);
     }
 
     @GetMapping("/email/{email}")
-    @Operation(summary = "Search customer by email")
+    @Operation(summary = "Search parking by email")
     public ResponseEntity<Object> getByEmail(
             @Parameter(example = "charlie@test.com", schema = @Schema(defaultValue = "charlie@test.com")) @PathVariable String email) {
-        return customerClient.getByEmail(email);
+        return parkingClient.getByEmail(email);
     }
 
     @GetMapping("/name/{name}")
-    @Operation(summary = "Search customer by name")
+    @Operation(summary = "Search parking by name")
     public ResponseEntity<Object> getByNameContainingIgnoreCase(
             @Parameter(example = "Charlie", schema = @Schema(defaultValue = "Charlie")) @PathVariable String name) {
-        return customerClient.getByName(name);
+        return parkingClient.getByName(name);
     }
 
     @PostMapping
-    @Operation(summary = "Register customer")
+    @Operation(summary = "Register parking")
     public ResponseEntity<Object> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Customer JSON body",
+                    description = "Parking JSON body",
                     required = true,
                     content = @Content(
                             mediaType = "application/json",
@@ -70,6 +70,6 @@ public class CustomerBffController {
                     )
             )
             @RequestBody Map<String, Object> body) {
-        return customerClient.create(body);
+        return parkingClient.create(body);
     }
 }

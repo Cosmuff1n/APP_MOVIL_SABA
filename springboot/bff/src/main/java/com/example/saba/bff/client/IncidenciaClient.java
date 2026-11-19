@@ -1,7 +1,6 @@
-package com.workshop.bff.client;
+package com.example.saba.bff.client;
 
 
-import com.workshop.bff.tracing.RequestIdRestClientInterceptor;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -9,41 +8,40 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-public class TicketClient {
+public class IncidenciaClient {
 
     private final RestClient restClient;
 
-    public TicketClient(@Value("${api.ticket.baseUrl}") String ticketBaseUrl) {
+    public IncidenciaClient(@Value("${api.incidencia.baseUrl}") String incidenciaBaseUrl) {
         this.restClient = RestClient.builder()
-                .baseUrl(ticketBaseUrl)
-                .requestInterceptor(RequestIdRestClientInterceptor::intercept)
+                .baseUrl(incidenciaBaseUrl)
                 .build();
     }
 
     public ResponseEntity<Object> getById(Long id) {
         return restClient.get()
-                .uri("/tickets/id/{id}", id)
+                .uri("/incidencias/id/{id}", id)
                 .retrieve()
                 .toEntity(Object.class);
     }
 
     public ResponseEntity<Object> getByStatus(String status) {
         return restClient.get()
-                .uri("/tickets/status/{status}", status)
+                .uri("/incidencias/status/{status}", status)
                 .retrieve()
                 .toEntity(Object.class);
     }
 
     public ResponseEntity<Object> getByCustomer(Long customerId) {
         return restClient.get()
-                .uri("/tickets?customerId={customerId}", customerId)
+                .uri("/incidencias?customerId={customerId}", customerId)
                 .retrieve()
                 .toEntity(Object.class);
     }
 
     public ResponseEntity<Object> create(Map<String, Object> body) {
         return restClient.post()
-                .uri("/tickets")
+                .uri("/incidencias")
                 .body(body)
                 .retrieve()
                 .toEntity(Object.class);

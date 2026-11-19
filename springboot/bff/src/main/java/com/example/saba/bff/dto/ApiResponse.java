@@ -1,4 +1,4 @@
-package com.workshop.bff.dto;
+package com.example.saba.bff.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
