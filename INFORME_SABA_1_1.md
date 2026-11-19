@@ -13,8 +13,8 @@
 - [10. Funcionalidades y pantallas](#10-funcionalidades-y-pantallas)
 - [11. Persistencia de datos](#11-persistencia-de-datos)
 - [12. Autenticación y seguridad](#12-autenticación-y-seguridad)
-- [13.Integraciones y servicios](#13integraciones-y-servicios)
-- [14.Pruebas y verificación](#14pruebas-y-verificación)
+- [13. Arquitectura e integración de microservicios Spring Boot (CSR, Clients y BFF)](#13-arquitectura-e-integración-de-microservicios-spring-boot-csr-clients-y-bff)
+
 
 
 # Resumen ejecutivo
@@ -937,3 +937,425 @@ La documentación definitiva deberá explicar cómo se conserva la sesión, cóm
 - Proteger los tokens de autenticación.
 - Utilizar conexiones HTTPS para transmitir información sensible.
 - Comprobar que los servicios protegidos validen las credenciales correspondientes.
+
+# 13. Arquitectura e integración de microservicios Spring Boot (CSR, Clients y BFF)
+
+> **Estado documental:** especificación técnica de desarrollo. La existencia de una clase en los árboles de esta sección indica una **responsabilidad prevista**, no que esté programada, compilada o probada. El proyecto `springboot/parking/` ya fue creado, pero su CRUD, la persistencia y la conexión extremo a extremo deben verificarse. Los proyectos `incidents/` y `bff/` están planificados.
+
+## 13.1 Objetivo y principios de implementación
+
+SABA incorporará un backend en **Java con Spring Boot** para que los estacionamientos y las incidencias puedan compartirse entre dispositivos. Se utilizarán el **patrón Controller–Service–Repository (CSR)**, una interfaz de servicio con su `ServiceImpl`, **Clients HTTP basados en `RestClient`** y un **Backend for Frontend (BFF)** como punto de entrada remoto de Android.
+
+La aplicación Android **conserva íntegramente** la arquitectura del capítulo 9: `Screen → ViewModel → Repository → LocalDataSource/Room` o `RemoteDataSource/Retrofit`. El backend se agrega detrás de Retrofit; no se reorganizan las carpetas Android para adaptarlas a Spring Boot.
+
+Reglas de diseño:
+
+- Un microservicio es dueño de su información, sus reglas y su propia base de datos. No accede por SQL a la base de otro microservicio.
+- Las solicitudes externas llegan al BFF; este delega mediante Clients HTTP y no contiene los repositorios JPA de los servicios.
+- Los Controllers reciben y responden HTTP; los `ServiceImpl` implementan reglas; los Repository JPA consultan y guardan datos.
+- **No se crea un microservicio de autenticación**. Android gestiona el inicio/cierre de sesión con Cognito; BFF y microservicios validan y autorizan el access token recibido.
+- Se conservarán nombres, tipos y contratos existentes de Android siempre que sea posible. Si un cambio de contrato es imprescindible, se documentará y se actualizarán ambos extremos de manera coordinada.
+- Los archivos del backend solo se crearán cuando representen una responsabilidad concreta. No se agregarán componentes decorativos, sin uso ni implementaciones duplicadas.
+
+## 13.2 Componentes, alcance y estado
+
+| Componente | Responsabilidad | Datos persistidos | Estado conocido |
+| --- | --- | --- | --- |
+| `springboot/parking/` | CRUD y validaciones de estacionamientos remotos; gestión de revisiones. | Base de datos propia, prevista con PostgreSQL/JPA. | Proyecto inicial creado; funcionalidad por verificar. |
+| `springboot/incidents/` | Registro, consulta, seguimiento y cierre de incidencias remotas. | Base de datos propia, prevista con PostgreSQL/JPA. | Pendiente. |
+| `springboot/bff/` | API HTTP para Android y delegación hacia ambos microservicios. | Sin base de datos de negocio. | Pendiente. |
+| `app/` | UI, sesiones Cognito, lógica Android y datos locales con Room. | SQLite del dispositivo. | Aplicación existente; la integración con Spring Boot está pendiente. |
+
+El servicio `parking` se desarrollará primero porque Android **ya define** los endpoints remotos de estacionamientos. Los servicios no implementan cobros, emisión de boletas ni control directo de barreras.
+
+## 13.3 Diagrama de comunicación completo
+
+```text
+ SABA ANDROID (Kotlin / Compose)
+ ┌─────────────────────────────────────────────────────────────┐
+ │ Screen ──eventos──> ViewModel ──> Repository (domain)       │
+ │      <── StateFlow ───┘                  │                    │
+ │                              RepositoryImpl (data)          │
+ │                                  /         \                │
+ │                         LocalDataSource  RemoteDataSource   │
+ │                               │               │             │
+ │                         DAO / Room       API / Retrofit     │
+ │                               │               │             │
+ │                            SQLite        HTTP + JWT         │
+ └───────────────────────────────────────────────┼─────────────┘
+                                                 │
+                                                 ▼
+                        ┌────────────────────────────────────┐
+                        │ BFF: Controller → Client/RestClient│
+                        │     Validación JWT y autorización  │
+                        └────────────────┬───────────────────┘
+                                         │
+                             ┌───────────┴────────────┐
+                             ▼                        ▼
+                      MS parking                 MS incidents
+                      Controller                 Controller
+                          │                          │
+                       Service                    Service
+                          │                          │
+                      ServiceImpl                ServiceImpl
+                          │                          │
+                     Repository JPA              Repository JPA
+                          │                          │
+                     BD parking                 BD incidents
+                             ▲                        │
+                             └── ParkingClient ───────┘
+                                 RestClient interno
+                                 (solo si hace falta)
+```
+
+**Tipos de cliente distintos:** `Retrofit` pertenece a Android y llama al BFF; `RestClient` pertenece a Spring Boot y permite llamar del BFF a los microservicios o entre microservicios. **Los Clients no acceden a tablas**: transmiten solicitudes HTTP, cuerpos JSON, encabezados y respuestas.
+
+## 13.4 Estructura prevista de archivos del backend
+
+Los nombres indicados a continuación son el **objetivo de desarrollo**. El paquete Java real se determinará desde el `group` y el código generado por Spring Initializr; no se inventará un package incompatible con el proyecto de NetBeans.
+
+```text
+APP_MOVIL_SABA/
+├── app/                                    # Android: se conserva su arquitectura
+└── springboot/
+    ├── parking/                            # Proyecto Java + Gradle independiente
+    │   ├── build.gradle
+    │   └── src/
+    │       ├── main/
+    │       │   ├── java/<paquete_real>/
+    │       │   │   ├── <ParkingApplication>.java
+    │       │   │   ├── controller/ParkingController.java
+    │       │   │   ├── service/ParkingService.java
+    │       │   │   ├── serviceimpl/ParkingServiceImpl.java
+    │       │   │   ├── repository/ParkingRepository.java
+    │       │   │   ├── model/ParkingEntity.java
+    │       │   │   ├── dto/ParkingDto.java
+    │       │   │   ├── exception/            # Si hay excepciones propias
+    │       │   │   └── config/               # Seguridad y beans necesarios
+    │       │   └── resources/
+    │       │       ├── application.properties # O application.yml
+    │       │       └── db/migration/         # Si utilizamos Flyway
+    │       └── test/java/<paquete_real>/
+    ├── incidents/                          # Proyecto independiente
+    │   └── src/main/java/<paquete_real>/
+    │       ├── <IncidentsApplication>.java
+    │       ├── controller/IncidentController.java
+    │       ├── service/IncidentService.java
+    │       ├── serviceimpl/IncidentServiceImpl.java
+    │       ├── repository/IncidentRepository.java
+    │       ├── model/IncidentEntity.java
+    │       ├── dto/IncidentDto.java
+    │       ├── client/                      # Solo si se usa consulta interservicio
+    │       │   ├── ParkingClient.java
+    │       │   └── ParkingClientImpl.java
+    │       ├── exception/
+    │       └── config/
+    └── bff/                                # Proyecto independiente
+        └── src/main/java/<paquete_real>/
+            ├── <BffApplication>.java
+            ├── controller/
+            │   ├── ParkingBffController.java
+            │   └── IncidentBffController.java
+            ├── client/
+            │   ├── ParkingClient.java
+            │   ├── ParkingClientImpl.java
+            │   ├── IncidentClient.java
+            │   └── IncidentClientImpl.java
+            ├── dto/                        # Solo si el BFF adapta contratos
+            ├── exception/
+            └── config/                     # Seguridad / RestClient
+```
+
+Las carpetas `config/`, `exception/` y `dto/` no obligan a crear archivos vacíos. Cada aplicación Spring Boot también tendrá su propia configuración Gradle, recursos y pruebas.
+
+## 13.5 Archivos de `parking`: responsabilidad y comunicación
+
+| Archivo | Qué contiene o realiza | Se comunica con |
+| --- | --- | --- |
+| Clase principal `*Application.java` | Arranca el contexto Spring Boot y detecta componentes del paquete. | Configuración y beans de Spring. |
+| `build.gradle` | Declara Java, Gradle y las dependencias necesarias. | Proceso de compilación; no participa en solicitudes HTTP. |
+| `application.properties`/`.yml` | Puerto, conexión a BD, URL del emisor JWT y parámetros externalizados. | Spring Boot, JPA, seguridad y Clients si existieran. |
+| `controller/ParkingController.java` | Atiende HTTP `GET`, `POST`, `PUT` y `DELETE`; recibe DTO, path y headers; devuelve códigos y datos. | `ParkingService` (inyectado). |
+| `service/ParkingService.java` | **Interfaz** con las operaciones disponibles; no contiene las consultas SQL. | Contrato entre Controller y `ParkingServiceImpl`. |
+| `serviceimpl/ParkingServiceImpl.java` | **Implementación**: valida reglas, comprueba `revision`, transforma DTO ↔ Entity y coordina transacciones. | `ParkingRepository` y modelos/DTO. |
+| `repository/ParkingRepository.java` | Interfaz `JpaRepository<ParkingEntity, Long>` (o equivalente). | JPA y la base de datos de `parking`. |
+| `model/ParkingEntity.java` | Define las columnas y reglas de persistencia de la tabla remota mediante JPA. | `ParkingRepository` y `ParkingServiceImpl`. |
+| `dto/ParkingDto.java` | Representa la información enviada y recibida por JSON. Puede requerir DTOs de creación y modificación si sus restricciones difieren. | Controller, ServiceImpl y Client del BFF. |
+| `exception/` | Excepciones específicas y manejo global de errores cuando corresponda. | Controller/ServiceImpl → respuestas HTTP. |
+| `config/` | Configuración de seguridad y, cuando sea necesario, de beans. | Validación JWT y componentes de Spring. |
+| `db/migration/` | Scripts Flyway para crear/evolucionar el esquema, si se adopta Flyway. | PostgreSQL al iniciar el servicio. |
+| `src/test/` | Pruebas de reglas del ServiceImpl, Controller y persistencia. | Componentes sujetos a prueba y dobles de prueba. |
+
+**Flujo interno de creación de estacionamiento:** `ParkingController → ParkingService (interfaz) → ParkingServiceImpl → ParkingRepository → ParkingEntity / PostgreSQL`. La respuesta recorre el camino inverso en forma de `ParkingDto`, **no como entidad JPA enviada directamente a Android**.
+
+> La interfaz `ParkingService` permite inyectar su implementación mediante Spring. La interfaz `ParkingRepository` de JPA es distinta tanto de `ParkingService` como del repositorio de dominio Android que también se llama `ParkingRepository.kt`.
+
+## 13.6 Archivos de `incidents`: responsabilidad y comunicación
+
+| Archivo | Qué contiene o realiza | Se comunica con |
+| --- | --- | --- |
+| `controller/IncidentController.java` | Expone los endpoints REST de incidencias, recibe solicitudes y devuelve respuestas. | `IncidentService`. |
+| `service/IncidentService.java` | Interfaz de operaciones de consulta, registro, actualización y cierre. | Controller y ServiceImpl. |
+| `serviceimpl/IncidentServiceImpl.java` | Valida campos y transiciones de estado, coordina el guardado y, si hace falta, verifica el estacionamiento asociado. | `IncidentRepository` y opcionalmente `ParkingClient`. |
+| `repository/IncidentRepository.java` | Accede únicamente a la base de datos de Incidencias mediante JPA. | `IncidentEntity` y PostgreSQL del servicio. |
+| `model/IncidentEntity.java` | Almacena los datos persistentes de la incidencia y sus relaciones dentro de la BD del servicio. | Repository y ServiceImpl. |
+| `dto/IncidentDto.java` | Define los campos JSON de entrada/salida de incidencias. | Controller, ServiceImpl y BFF. |
+| `client/ParkingClient.java` | **Interfaz**, si necesitamos consultar un estacionamiento desde Incidencias. | `IncidentServiceImpl`. |
+| `client/ParkingClientImpl.java` | **Implementación** mediante Spring `RestClient`; llama a un endpoint del MS Estacionamientos. | HTTP → `ParkingController` remoto. |
+| `exception/` y `config/` | Errores controlados, parámetros de red y verificación de JWT. | Controller, ServiceImpl, RestClient y Spring Security. |
+
+**Caso de uso previsto:** si se exige que `parkingId` corresponda a un estacionamiento remoto existente, `IncidentServiceImpl` llama a `ParkingClient`; este hace una solicitud HTTP al MS `parking`. Tras recibir una confirmación válida, Incidencias guarda **su propio** `IncidentEntity` mediante `IncidentRepository`.
+
+La consulta entre servicios **no es automática ni obligatoria para todos los endpoints**. La implementaremos solo cuando exista una regla de negocio definida; la caída de `parking` debe producir un resultado controlado y no permitir un registro incoherente por omisión. No hay claves foráneas SQL entre las bases de los dos servicios.
+
+## 13.7 Archivos del BFF: responsabilidad y comunicación
+
+| Archivo | Qué hace | Se comunica con |
+| --- | --- | --- |
+| `controller/ParkingBffController.java` | Recibe las rutas públicas `/api/parkings`, sus DTO, headers y parámetros. | `ParkingClient` del BFF. |
+| `client/ParkingClient.java` | Interfaz que declara las operaciones HTTP hacia `parking`. | Controller y `ParkingClientImpl`. |
+| `client/ParkingClientImpl.java` | Ejecuta `GET`, `POST`, `PUT` y `DELETE` con `RestClient`; propaga headers y convierte JSON ↔ DTO. | `ParkingController` del MS `parking`. |
+| `controller/IncidentBffController.java` | Recibe las rutas públicas `/api/incidents`. | `IncidentClient` del BFF. |
+| `client/IncidentClient.java` | Interfaz para llamadas hacia `incidents`. | Controller y `IncidentClientImpl`. |
+| `client/IncidentClientImpl.java` | Implementación `RestClient` para llamar al MS de Incidencias. | `IncidentController` remoto. |
+| `dto/` | DTO propio **solo** cuando el BFF tenga que transformar o agregar una respuesta. | Controllers y Clients del BFF. |
+| `config/` | Bean/configuración de `RestClient`, URL de cada servicio y reglas de seguridad. | Clients y Spring Security. |
+| `exception/` | Errores de red, timeouts y traducción de códigos HTTP sin ocultar fallos. | Controllers y Clients. |
+
+El BFF funciona inicialmente como **intermediario HTTP**. No implementa CRUD mediante JPA, no abre conexiones a las bases de datos de los microservicios y no reemplaza sus `ServiceImpl`. Solo añadiremos respuestas agregadas para Home si se define un caso concreto.
+
+La URL de Retrofit en Android apuntará al BFF **cuando la ruta y la autenticación estén funcionando**. Cada Client BFF tiene una URL interna propia, configurable, distinta de la URL pública.
+
+## 13.8 ¿Debemos compartir los DTO y Entity con Android?
+
+**No se comparten las clases fuente.** Cada aplicación tiene su propia representación de datos; **comparten un contrato JSON** que debe mantener nombres de campos, tipos y reglas de compatibilidad.
+
+| Responsabilidad | Android (Kotlin) | Backend (Java) |
+| --- | --- | --- |
+| Modelo que utiliza la lógica de la aplicación | `domain/model/Parking.kt` | Concepto representado en `ParkingServiceImpl`; no se copia el modelo Kotlin. |
+| Persistencia local | `data/local/entity/ParkingEntity.kt`, anotaciones Room/SQLite | **No utiliza** la entidad Android. |
+| Persistencia remota | Android no administra directamente PostgreSQL. | `parking/model/ParkingEntity.java`, anotaciones JPA. |
+| Comunicación HTTP | `data/remote/dto/Ec2ParkingDto.kt` y los DTOs de creación/modificación | `parking/dto/ParkingDto.java` y DTOs de escritura compatibles. |
+| Al pasar por el BFF | Retrofit serializa/deserializa JSON | Client `RestClient` utiliza DTOs Java; no necesita Entity JPA. |
+
+Ejemplo del JSON que deberá poder leer `Ec2ParkingDto.kt` (valores ilustrativos):
+
+```json
+{
+  "id": 15,
+  "name": "Estacionamiento Central",
+  "address": "Av. Principal 123",
+  "commune": "Santiago",
+  "totalSpaces": 120,
+  "freeSpaces": 42,
+  "isActive": true,
+  "revision": 3,
+  "updatedAt": 1795000000000,
+  "status": "Activo"
+}
+```
+
+El campo `updatedAt` del DTO Android actual es un **`Long`**. En Java deberá serializarse como número compatible, no cambiarlo silenciosamente por un string ISO. El `status` es un campo del contrato; su semántica definitiva se documentará sin confundir actividad del parking con el estado de sus equipos.
+
+En la app, `ParkingMapper.kt` transforma `Ec2ParkingDto → ParkingEntity` de caché y luego el modelo `Parking` del dominio; el backend transforma `ParkingDto ↔ ParkingEntity` JPA. **No se transfieren objetos de memoria entre Java y Kotlin: se intercambian JSON mediante HTTP.**
+
+Para Incidencias, el contrato debe respetar las propiedades reales del modelo `domain/model/Incident.kt` y los formularios existentes: `ticketCode`, `parkingId`, `serviceId`, `failureType`, `description`, `status`, `reportedAt`, datos del reportante, evidencia y resolución. **La conversión local/servidor todavía requiere diseñarse**, especialmente por la diferencia entre IDs locales y remotos.
+
+## 13.9 Archivos Android involucrados en la integración
+
+Los nombres siguientes pertenecen al proyecto Android actual; su estructura no se modifica.
+
+| Archivo Android | Papel en la comunicación con Spring Boot |
+| --- | --- |
+| `ui/home/Ec2ParkingsSection.kt` | UI actual de consulta y CRUD remoto de estacionamientos. Entrega eventos a `HomeViewModel`. |
+| `ui/home/HomeViewModel.kt` y `HomeUiState.kt` | Gestionan token remoto, carga, acciones, lista en caché y mensajes de error; exponen estado a Compose. |
+| `domain/repository/ParkingRepository.kt` | Contrato de dominio para datos locales y operaciones remotas. |
+| `data/repository/ParkingRepositoryImpl.kt` | Coordina el acceso remoto y la actualización de Room. |
+| `data/remote/datasource/ParkingRemoteDataSource.kt` | Encapsula las llamadas al API Retrofit y agrega `Authorization: Bearer ...`. |
+| `data/remote/apiservice/Ec2ParkingApiService.kt` | Declara exactamente los métodos, rutas y headers públicos de la API remota. |
+| `data/remote/dto/Ec2ParkingDto.kt` | Define los DTOs de lectura, creación y modificación del contrato HTTP. |
+| `data/remote/client/Ec2RetrofitClient.kt` | Construye Retrofit con `BuildConfig.EC2_API_BASE_URL`; puede apuntar al BFF al integrar el backend, sin cambiar su ubicación arquitectónica. |
+| `di/NetworkModule.kt` | Proporciona `Ec2ParkingApiService` mediante Hilt. |
+| `data/mapper/ParkingMapper.kt` | Convierte el DTO remoto a la representación local y al modelo de dominio. |
+| `data/local/datasource/ParkingLocalDataSource.kt`, `data/local/dao/ParkingDao.kt` | Guardan y observan la caché remota en Room. |
+| `data/local/entity/ParkingEntity.kt` | Guarda IDs locales, `remoteId`, `revision`, `remoteUpdatedAt` y `lastSyncedAt`. |
+| `ui/incidents/IncidentViewModel.kt` | Gestiona actualmente el registro y cierre **locales** de incidencias; no debe describirse como integrado al MS todavía. |
+| `data/repository/IncidentRepositoryImpl.kt` | Usa `IncidentLocalDataSource` actualmente; se extenderá dentro de la arquitectura definida cuando exista el contrato remoto. |
+| `data/remote/datasource/IncidentRemoteDataSource.kt` | Ruta prevista en el informe para integrar el MS Incidencias, **sin dar por hecha su implementación**. |
+| `auth/CognitoAuthManager.kt` | Gestiona autenticación Cognito y entrega los tokens a la sesión Android; el backend no lo sustituye. |
+
+**Advertencia sobre nombres:** se conservan `Ec2ParkingApiService` y `Ec2RetrofitClient` durante la integración por compatibilidad. Su nombre no obliga a utilizar EC2: lo relevante será la URL que se configure. No se renombrarán automáticamente clases que ya funcionan.
+
+## 13.10 Ejemplo completo: consultar estacionamientos
+
+1. La UI `Ec2ParkingsSection.kt` solicita actualizar mediante `HomeViewModel.refreshRemote()`.
+2. `HomeViewModel` llama a `ParkingRepository.refreshRemote(token)` a través de su contrato de dominio.
+3. `ParkingRepositoryImpl` utiliza `ParkingRemoteDataSourceImpl`, que llama a `Ec2ParkingApiService.getParkings(...)`.
+4. Retrofit envía `GET /api/parkings` al **BFF** con `Authorization: Bearer <access_token>`.
+5. `ParkingBffController` delega en su `ParkingClient`, implementado con `RestClient`, que consulta `ParkingController` en el MS `parking`.
+6. `ParkingController → ParkingService → ParkingServiceImpl → ParkingRepository JPA` consulta la base de datos del servidor.
+7. La respuesta retorna como JSON; Android la convierte a `Ec2ParkingDto`, la guarda en caché Room por `ParkingMapper`/`ParkingLocalDataSource` y `HomeViewModel` recibe los cambios observados.
+8. Jetpack Compose actualiza la lista al recolectar el `StateFlow` sin consultar directamente el servidor ni la base de datos.
+
+```text
+Ec2ParkingsSection → HomeViewModel → ParkingRepository (Android)
+ → ParkingRepositoryImpl → ParkingRemoteDataSource → Ec2ParkingApiService
+ → Retrofit [HTTP] → ParkingBffController → ParkingClientImpl [RestClient]
+ → ParkingController → ParkingService → ParkingServiceImpl
+ → ParkingRepository (JPA) → PostgreSQL
+ ← JSON ← Ec2ParkingDto ← ParkingMapper → Room/Flow → HomeUiState → UI
+```
+
+## 13.11 Ejemplo completo: crear, modificar y eliminar estacionamientos
+
+El contrato HTTP **ya definido por Android** es:
+
+| HTTP | Ruta pública | Cuerpo/encabezado | Resultado |
+| --- | --- | --- | --- |
+| `GET` | `/api/parkings` | Header `Authorization` | Lista de `Ec2ParkingDto`. |
+| `POST` | `/api/parkings` | `Ec2ParkingCreateDto` | `Ec2ParkingDto` creado. |
+| `PUT` | `/api/parkings/{id}` | `Ec2ParkingPatchDto` con `revision` | `Ec2ParkingDto` actualizado. |
+| `DELETE` | `/api/parkings/{id}` | Header `If-Match` con la revisión | Respuesta sin cuerpo obligatorio. |
+
+**Campos al crear:** `name`, `address`, `commune`, `totalSpaces`, `freeSpaces`, `isActive`. **Campos al modificar actualmente:** `revision` y, opcionalmente, `name` o `isActive`. Todas las solicitudes llevan un access token en `Authorization`.
+
+Ejemplo de edición:
+
+```http
+PUT /api/parkings/15
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{"revision":3,"name":"Estacionamiento Central"}
+```
+
+La revisión es necesaria para evitar sobrescribir modificaciones de otro usuario. Si el registro cambió desde que Android lo consultó, el backend debe responder un error de conflicto de forma controlada; BFF y Retrofit no deben interpretar el fallo como éxito. El número de revisión, los códigos HTTP precisos y el mecanismo de concurrencia deben concordar entre todos los componentes.
+
+Al completar un CRUD remoto, `ParkingRepositoryImpl` llama a `refreshRemote(...)` y actualiza la caché. **Un estacionamiento almacenado solo localmente no se convierte automáticamente en remoto**; esa sincronización requiere reglas específicas. Para no confundir identificadores, el modelo Android contiene `id` (SQLite) y `remoteId` (servidor). Actualmente el mapper asigna a la caché de estacionamientos remotos un ID local negativo derivado del ID remoto, para separarlo de los IDs positivos locales.
+
+## 13.12 Ejemplo previsto: registrar una incidencia
+
+El registro de incidencias en la aplicación actual funciona mediante **Room local**. Para conectarlo con Spring Boot se acordará antes un contrato de creación y una política de sincronización; no sustituiremos sin pruebas el flujo existente.
+
+Flujo de integración previsto:
+
+1. `IncidentScreen` solicita la creación a `IncidentViewModel` mediante un formulario validado.
+2. `IncidentViewModel` llama a `IncidentRepository` (Android). `IncidentRepositoryImpl` coordinará la política de almacenamiento local/remoto definida.
+3. `IncidentRemoteDataSource` utilizará Retrofit para enviar el DTO acordado a `POST /api/incidents` del BFF.
+4. `IncidentBffController → IncidentClientImpl` enviará la solicitud al MS `incidents`.
+5. `IncidentController → IncidentService → IncidentServiceImpl` validará los datos y, si corresponde, consultará `ParkingClientImpl → ParkingController` para comprobar `parkingId`.
+6. `IncidentRepository` JPA persistirá `IncidentEntity` **en la base de datos de Incidencias** y devolverá un DTO con el resultado.
+7. Android actualizará su estado y persistencia conforme a la política de sincronización elegida; los errores del servidor no deberán borrar un registro local exitoso.
+
+**Atención a los identificadores:** un `parkingId` que identifica una fila local Room no equivale automáticamente al `id` del servidor. Antes de enviar una incidencia asociada a un parking se verificará su identidad remota. Lo mismo aplica a `serviceId`; para este recurso todavía no está definido el contrato remoto y no debe inventarse una traducción arbitraria.
+
+**Evidencias:** `IncidentViewModel` guarda actualmente los archivos seleccionados en almacenamiento privado del dispositivo y conserva una URI local. Esa URI **no permite** que otros usuarios descarguen la evidencia. Una incidencia remota con fotografías o vídeos necesitará un contrato de carga de archivos y almacenamiento en el backend o en un servicio de objetos, con autorización y límites de tamaño. Esto debe diseñarse antes de afirmar soporte remoto para adjuntos.
+
+La eliminación física de incidentes podría contradecir requisitos de trazabilidad. Debemos definir si se usa borrado lógico, cancelación o permisos especiales antes de fijar un endpoint `DELETE`.
+
+## 13.13 Contrato inicial previsto para Incidencias
+
+Estas rutas son **propuestas**, a diferencia de las rutas de parking verificadas en el código Android:
+
+| HTTP | Ruta pública propuesta | Función prevista |
+| --- | --- | --- |
+| `GET` | `/api/incidents` | Listar registros autorizados. |
+| `GET` | `/api/incidents/{id}` | Consultar detalle. |
+| `POST` | `/api/incidents` | Crear un incidente. |
+| `PUT` | `/api/incidents/{id}` | Actualizar campos, estado o resolución según reglas. |
+| `DELETE` | `/api/incidents/{id}` | **Opcional** y sujeto a trazabilidad/permisos. |
+
+La estructura de `IncidentDto.java`, estados permitidos, tratamiento de evidencia, permisos y manejo de la relación con servicios se concretarán a partir de los requerimientos de SABA y sus clases Android, no por analogía automática con otras aplicaciones.
+
+## 13.14 Autenticación, autorización y seguridad
+
+El usuario se autentica en la pantalla Android mediante **Amazon Cognito con Authorization Code + PKCE**. La app obtiene un access token; al llamar al BFF envía `Authorization: Bearer <token>`.
+
+- **BFF:** valida firma, emisor, expiración y demás claims relevantes; comprueba permisos de acceso a rutas antes de delegar.
+- **Microservicios:** no confían ciegamente en el BFF; también validan y autorizan el token si aceptan solicitudes protegidas. Cuando el BFF delega, transmite el token de usuario de manera segura según el contrato definido.
+- **Spring Security OAuth2 Resource Server:** mecanismo previsto para validar los JWT de Cognito con claves públicas publicadas por el proveedor. Debe configurarse para el User Pool y el tipo de token correctos (access token, no ID token).
+- **Android:** conserva su gestor de sesión. `JwtDecoder.kt` permite leer claims, **pero decodificar un JWT no equivale a verificar su firma**; la validación de servidor es indispensable.
+
+No se crea un servicio de login Spring Boot ni se almacenan contraseñas Cognito en PostgreSQL. Las URL del emisor y de los servicios son configuración; ninguna clave privada ni token se subirá a GitHub o quedará escrita en el código de los proyectos.
+
+## 13.15 Bases de datos, entidades y consistencia
+
+**PostgreSQL + Spring Data JPA** son la persistencia prevista del backend. Cada servicio posee su base de datos o esquema exclusivo; Flyway podrá aplicar migraciones SQL versionadas. El BFF no necesita Entity JPA ni Repository JPA para delegar solicitudes.
+
+**Room / SQLite** permanece dentro de Android. Sus entidades no se comparten con JPA. La existencia de `ParkingEntity.kt` y `ParkingEntity.java` es correcta porque tienen almacenamiento, anotaciones y ciclo de vida distintos.
+
+Definiciones pendientes que deben resolverse antes de programar la sincronización:
+
+- Identidad local frente a remota (`id`/`remoteId`) y asociaciones de incidencias con estacionamientos y servicios.
+- Política de actualización de caché, tolerancia a red intermitente y conflictos de modificación.
+- Comportamiento ante eliminación o desactivación de un estacionamiento referenciado por incidentes.
+- Concurrencia por `revision` para `PUT` y `DELETE`.
+- Almacenamiento de adjuntos y preservación de trazabilidad.
+
+**La caché de lectura no es una cola de escrituras offline.** No se afirmará sincronización bidireccional hasta implementarla y probarla.
+
+## 13.16 Errores, resiliencia y configuración
+
+| Situación | Comportamiento previsto |
+| --- | --- |
+| Consulta exitosa | `200 OK` y DTO tipado. |
+| Creación exitosa | `201 Created` y DTO creado, según contrato. |
+| Cuerpo inválido | `400 Bad Request` con mensaje controlado. |
+| Token faltante o inválido | `401 Unauthorized`. |
+| Usuario sin autorización | `403 Forbidden`. |
+| ID inexistente | `404 Not Found`. |
+| Revisión obsoleta | `409 Conflict` o `412 Precondition Failed`, según contrato final. |
+| MS dependiente caído | Error de integración controlado (`502`/`503`/`504` según la causa); no se devuelve éxito falso. |
+| Red de Android caída | Mostrar mensaje y conservar la caché Room cuando corresponda. |
+
+Las excepciones internas se traducen en `exception/` y no deben exponer stack traces ni información sensible al cliente. Los `RestClient` necesitarán tiempos de espera definidos y tratamiento explícito de fallos de conexión.
+
+**Configuración:** cada proyecto Java tiene su propio puerto y `application.properties`/`.yml`; las URLs internas y credenciales de base de datos se externalizan. El backend se trabajará en **Apache NetBeans, Java 26 y Gradle/Groovy**, sujetos a compatibilidad con las versiones instaladas. Android se mantiene en Android Studio con su configuración propia.
+
+No se incorporan Swagger/OpenAPI, tracing distribuido ni monitoreo adicional como requisitos de esta versión, salvo decisión posterior explícita.
+
+## 13.17 Pruebas técnicas y criterios de aceptación
+
+| Nivel | Qué debe probarse |
+| --- | --- |
+| `ParkingServiceImpl` | CRUD, validación de datos, revisión concurrente, inexistencia de recurso. |
+| `IncidentServiceImpl` | Reglas de negocio, estados, referencias remotas, fallos del `ParkingClient`. |
+| Controllers | Rutas, validaciones y códigos de respuesta con pruebas HTTP. |
+| Repository JPA | Persistencia real, consultas y restricciones de integridad en BD de prueba. |
+| Client `RestClient` | URL, serialización de DTO, cabeceras, propagación de JWT, timeouts y errores HTTP. |
+| BFF | Delegación correcta al servicio destino, protección de rutas y fidelidad de contratos. |
+| Android | Integración Retrofit, actualización de Room, estados del ViewModel y comportamiento sin red. |
+| Extremo a extremo | Registro/consulta Android → BFF → MS → PostgreSQL → Android. |
+| Seguridad | Rechazo de token vencido, alterado o insuficiente; ausencia de credenciales en repositorio. |
+
+Las pruebas backend pueden utilizar JUnit, Mockito y JaCoCo. **La exigencia de cobertura ≥80% se refiere a la lógica de la aplicación móvil** y no queda automáticamente cubierta por ejecutar solamente pruebas de Spring Boot.
+
+No se marcará una funcionalidad como completada por tener clases o endpoints escritos: debe arrancar, compilar, responder correctamente y superar sus casos de prueba.
+
+## 13.18 Orden de implementación y puntos de control
+
+| Paso | Trabajo | Verificación |
+| --- | --- | --- |
+| 1 | Confirmar el proyecto `springboot/parking` y su Gradle/JDK. | `bootRun` inicia. |
+| 2 | Crear `ParkingEntity`, DTO, Repository, Service, ServiceImpl y Controller. | CRUD en MS parking con BD propia. |
+| 3 | Implementar revisión, validaciones y excepciones. | `PUT`/`DELETE` respetan `revision` e informan errores. |
+| 4 | Crear BFF con `ParkingBffController`, `ParkingClient` y `ParkingClientImpl`. | Las rutas públicas funcionan a través de BFF. |
+| 5 | Integrar Cognito en seguridad del backend. | Las llamadas protegidas exigen access token válido. |
+| 6 | Conectar Retrofit Android al BFF sin reestructurar `app/`. | CRUD remoto visible en SABA y caché Room actualizada. |
+| 7 | Implementar MS Incidencias y su contrato. | Incidentes remotos con persistencia y reglas verificadas. |
+| 8 | Agregar `IncidentClient` del BFF e interservicio con Parking solo si es necesario. | Registro y consulta desde SABA con respuestas coherentes. |
+| 9 | Ejecutar pruebas y completar evidencias técnicas. | Build, casos HTTP, seguridad, cobertura y pruebas en el teléfono. |
+
+## 13.19 Decisiones que requieren confirmación técnica
+
+1. Puertos definitivos y URLs internas de `parking`, `incidents` y `bff`.
+2. Esquemas PostgreSQL, versión, credenciales y migraciones Flyway.
+3. Campos exactos de los DTO Java y serialización de `updatedAt` y `revision`.
+4. Reglas de autorización por perfiles, recursos y acciones.
+5. Identificación remota de `Service` y política de asociación `parkingId`/`serviceId` para incidencias.
+6. Contrato de adjuntos remotos y política de retención/eliminación de incidentes.
+7. Si Incidencias necesita validar estacionamientos por Client en línea y qué hacer ante la caída de ese servicio.
+8. Si Home necesita una respuesta agregada del BFF; no se desarrollará sin un caso de uso.
+9. La **API externa** es un requisito separado: deberá consumirse desde Android mediante Retrofit y mostrarse en UI; no se confunde con los Clients internos de Spring Boot.
+
+**Regla para implementar código a partir de este documento:** tomar como fuente de verdad el contrato vigente de Android y esta especificación, revisar las clases reales antes de editar, conservar la estructura de la app y crear en Spring Boot únicamente las clases declaradas o justificadas por una responsabilidad imprescindible. Si una decisión aún aparece pendiente, no presentarla como implementada ni fijarla arbitrariamente sin documentar el cambio.
