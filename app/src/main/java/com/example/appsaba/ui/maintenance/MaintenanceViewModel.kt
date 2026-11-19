@@ -4,7 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.appsaba.domain.model.Service
 import com.example.appsaba.domain.repository.ParkingRepository
 import com.example.appsaba.domain.repository.ServiceRepository
-import com.example.appsaba.ui.common.ActionViewModel
+import com.example.appsaba.ui.common.CommonViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.*
 class MaintenanceViewModel @Inject constructor(
     parkingRepository: ParkingRepository,
     private val repository: ServiceRepository
-) : ActionViewModel() {
+) : CommonViewModel() {
     private val selected = MutableStateFlow<Long?>(null)
     private val observedServices = selected.flatMapLatest { id ->
         if (id == null) flowOf(emptyList()) else repository.observeByParking(id)

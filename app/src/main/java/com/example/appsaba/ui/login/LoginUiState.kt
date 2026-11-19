@@ -1,5 +1,8 @@
 package com.example.appsaba.ui.login
 
+import android.content.Intent
+import com.example.appsaba.domain.model.Token
+
 data class LoginUiState(
     val rut: String = "",
     val password: String = "",
@@ -10,7 +13,11 @@ data class LoginUiState(
     val passwordError: String? = null,
     val loginError: String? = null,
     val isSuccess: Boolean = false,
-    val authToken: String? = null // <- agregado 02: guarda el access_token del 200
+    val authToken: String? = null,
+    val cognitoBusy: Boolean = false,
+    val cognitoError: String? = null,
+    val pendingCognitoIntent: Intent? = null,
+    val cognitoTokens: Token? = null
 ) {
     val canSubmit: Boolean
         get() = !isLoading

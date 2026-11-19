@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appsaba.domain.model.Service
-import com.example.appsaba.ui.incidents.IncidentsViewModel
+import com.example.appsaba.ui.incidents.IncidentViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,7 +57,7 @@ private fun statusColor(s: String): Color = when (s) {
 fun MaintenanceScreen(onManageEquipment: () -> Unit = {}) {
     val context = LocalContext.current
     val vm: MaintenanceViewModel = viewModel()
-    val incidentVm: IncidentsViewModel = viewModel()
+    val incidentVm: IncidentViewModel = viewModel()
     val state by vm.uiState.collectAsStateWithLifecycle()
     val incidentState by incidentVm.uiState.collectAsStateWithLifecycle()
     var selectedServiceId by remember { mutableStateOf<Long?>(null) }

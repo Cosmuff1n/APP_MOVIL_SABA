@@ -1,7 +1,7 @@
 package com.example.appsaba.data.local.datasource
 
 import com.example.appsaba.data.local.entity.ServiceEntity
-import com.example.appsaba.data.local.ServiceDao
+import com.example.appsaba.data.local.dao.ServiceDao
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 

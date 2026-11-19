@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 import com.example.appsaba.domain.model.Parking
 import com.example.appsaba.domain.model.User
 
-import com.example.appsaba.ui.data.RecordCard
-import com.example.appsaba.ui.data.ConfirmDelete
+import com.example.appsaba.ui.components.RecordCard
+import com.example.appsaba.ui.components.ConfirmDelete
 
 @Composable
 internal fun UsersScreen(users: List<User>, parkings: List<Parking>, selectedParkingId: Long?,

@@ -2,6 +2,7 @@ package com.example.appsaba.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 
 /**
  * Estacionamiento administrado desde Saba.
@@ -9,7 +10,7 @@ import androidx.room.PrimaryKey
  * La disponibilidad de plazas es diferente del estado de sus equipos
  * tecnologicos (que se guarda en Service).
  */
-@Entity(tableName = "parkings")
+@Entity(tableName = "parkings", indices = [Index(value = ["remoteId"], unique = true)])
 data class ParkingEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
@@ -18,5 +19,9 @@ data class ParkingEntity(
     val commune: String = "",
     val totalSpaces: Int = 0,
     val freeSpaces: Int = 0,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val remoteId: Long? = null,
+    val revision: Long? = null,
+    val remoteUpdatedAt: Long? = null,
+    val lastSyncedAt: Long? = null
 )

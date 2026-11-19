@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
+import retrofit2.HttpException
 import kotlinx.coroutines.launch
 
 // Aquí el token recibe los repositorios para leer estacionamientos y servicios desde Room.
@@ -29,8 +31,14 @@ class HomeViewModel @Inject constructor(
 
     // Id del parking elegido
     private val selectedParkingId = MutableStateFlow<Long?>(null)
+    private var activeRemoteToken: String? = null
 
     init {
+        viewModelScope.launch {
+            parkings.observeRemote().collect { cached ->
+                _uiState.update { it.copy(remoteParkings = cached) }
+            }
+        }
         // 2) Lista de parkings activos. Room avisa solo cuando algo cambia (Flow).
         viewModelScope.launch {
             parkings.observeActive().collect { list ->
@@ -58,6 +66,44 @@ class HomeViewModel @Inject constructor(
             .onSuccess { user -> _uiState.update { it.copy(user = user, decodeError = null) } }
             .onFailure { _uiState.update { it.copy(decodeError = "No se pudo leer la sesión") } }
     }
+
+    fun setRemoteToken(token: String?) {
+        if (token == activeRemoteToken) return
+        activeRemoteToken = token
+        if (!token.isNullOrBlank()) remoteAction(token) { parkings.refreshRemote(it) }
+    }
+
+    private fun remoteAction(token: String?, operation: suspend (String) -> Unit) {
+        if (token.isNullOrBlank() || _uiState.value.remoteBusy) return
+        _uiState.update { it.copy(remoteBusy = true, remoteFeedback = "Conectando con EC2...") }
+        viewModelScope.launch {
+            try {
+                operation(token)
+                _uiState.update { it.copy(remoteFeedback = "Sincronizacion correcta con EC2") }
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (error: HttpException) {
+                val msg = when (error.code()) {
+                    401 -> "Sesion Cognito caducada. Cierra sesion e ingresa otra vez."
+                    409 -> "Conflicto de revision: actualiza antes de editar."
+                    else -> "HTTP ${error.code()} al conectar con EC2"
+                }
+                _uiState.update { it.copy(remoteFeedback = msg) }
+            } catch (error: Exception) {
+                _uiState.update { it.copy(remoteFeedback = "EC2 no disponible. Cache Room conservada: ${error.localizedMessage}") }
+            } finally {
+                _uiState.update { it.copy(remoteBusy = false) }
+            }
+        }
+    }
+
+    fun refreshRemote() = remoteAction(activeRemoteToken) { parkings.refreshRemote(it) }
+    fun createRemote(name: String) = remoteAction(activeRemoteToken) { parkings.createRemote(it, name) }
+    fun renameRemote(parking: com.example.appsaba.domain.model.Parking, name: String) =
+        remoteAction(activeRemoteToken) { parkings.renameRemote(it, parking, name) }
+    fun toggleRemote(parking: com.example.appsaba.domain.model.Parking) =
+        remoteAction(activeRemoteToken) { parkings.toggleRemote(it, parking) }
+    fun deleteRemote(parking: com.example.appsaba.domain.model.Parking) =
+        remoteAction(activeRemoteToken) { parkings.deleteRemote(it, parking) }
 
     fun selectParking(id: Long) {
         selectedParkingId.value = id

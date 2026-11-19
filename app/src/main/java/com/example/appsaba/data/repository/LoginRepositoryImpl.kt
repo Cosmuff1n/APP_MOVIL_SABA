@@ -1,7 +1,7 @@
 package com.example.appsaba.data.repository
 
-import com.example.appsaba.data.remote.AuthApiService
-import com.example.appsaba.data.remote.LoginRequest
+import com.example.appsaba.data.remote.apiservice.AuthApiService
+import com.example.appsaba.data.remote.dto.LoginRequest
 import com.example.appsaba.domain.model.LoginSession
 import com.example.appsaba.domain.repository.LoginRepository
 import javax.inject.Inject

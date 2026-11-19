@@ -48,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.appsaba.BuildConfig
-import com.example.appsaba.core.jwt.SessionUser
+import com.example.appsaba.domain.model.SessionUser
 import com.example.appsaba.domain.model.Parking
 import com.example.appsaba.domain.model.Service
 import com.example.appsaba.ui.theme.AppSabaTheme

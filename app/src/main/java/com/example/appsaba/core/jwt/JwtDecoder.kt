@@ -1,20 +1,30 @@
 package com.example.appsaba.core.jwt
 
 import android.util.Base64
-import com.google.gson.Gson
+import com.example.appsaba.domain.model.SessionUser
+import org.json.JSONObject
 
-// object = singleton sin estado: una sola función pura decode(), sin dependencias.
-// Es object (no class) porque no necesita instancia, configuración ni ciclo de vida.
+/**
+ * Lee claims para presentacion; decodificar NO valida la firma del JWT.
+ * El backend es responsable de validar firma, emisor, audience y expiracion.
+ */
 object JwtDecoder {
-    private val gson = Gson()
-
-    // Un JWT = header.payload.signature separados por '.'. Solo nos interesa [1] (payload).
-    // Base64.URL_SAFE = alfabeto URL (-_ en vez de +/) y sin padding extra.
-    // runCatching = si el token viene roto, devuelve failure en vez de crashear (ver 01 AuthRepository).
     fun decode(accessToken: String): Result<SessionUser> = runCatching {
-        val parts = accessToken.split(".")
-        require(parts.size == 3) { "Token sin formato JWT" }
-        val json = String(Base64.decode(parts[1], Base64.URL_SAFE), Charsets.UTF_8)
-        gson.fromJson(json, SessionUser::class.java)
+        val pieces = accessToken.split('.')
+        require(pieces.size == 3) { "Token sin formato JWT" }
+        val body = String(Base64.decode(pieces[1], Base64.URL_SAFE or Base64.NO_WRAP), Charsets.UTF_8)
+        val json = JSONObject(body)
+        val claims = json.optJSONArray("roles") ?: json.optJSONArray("cognito:groups")
+        val roles = if (claims == null) emptyList() else (0 until claims.length()).mapNotNull {
+            claims.optString(it).takeIf(String::isNotBlank)
+        }
+        SessionUser(
+            rut = json.optString("rut").ifBlank { json.optString("email") },
+            roles = roles,
+            iss = json.optString("iss"),
+            sub = json.optString("sub"),
+            iat = json.optLong("iat", 0L),
+            exp = json.optLong("exp", 0L)
+        )
     }
 }

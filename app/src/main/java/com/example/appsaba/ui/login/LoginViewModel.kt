@@ -1,5 +1,9 @@
 package com.example.appsaba.ui.login
 
+import android.content.Intent
+import com.example.appsaba.auth.CognitoAuthManager
+import com.example.appsaba.auth.CognitoAuthResult
+import kotlinx.coroutines.CancellationException
 import androidx.lifecycle.ViewModel
 import com.example.appsaba.BuildConfig
 import androidx.lifecycle.viewModelScope
@@ -13,8 +17,66 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: LoginRepository
+    private val repository: LoginRepository,
+    private val cognitoManager: CognitoAuthManager
 ) : ViewModel() {
+
+
+    /** El ViewModel controla AppAuth/PKCE; la UI solamente abre el Intent. */
+    fun startCognitoLogin() {
+        if (_uiState.value.cognitoBusy) return
+        _uiState.update { it.copy(cognitoBusy = true, cognitoError = null, cognitoTokens = null) }
+        viewModelScope.launch {
+            try {
+                val intent = cognitoManager.buildAuthIntent()
+                _uiState.update { it.copy(pendingCognitoIntent = intent) }
+            } catch (cancelled: CancellationException) {
+                _uiState.update { it.copy(cognitoBusy = false) }
+                throw cancelled
+            } catch (error: Exception) {
+                _uiState.update { it.copy(cognitoBusy = false, cognitoError = "Cognito: ${error.message ?: "No se pudo iniciar"}") }
+            }
+        }
+    }
+
+    fun onCognitoIntentOpened() {
+        _uiState.update { it.copy(pendingCognitoIntent = null) }
+    }
+
+    fun onCognitoResponse(data: Intent?) {
+        try {
+            cognitoManager.exchangeCode(data) { authResult ->
+                when (authResult) {
+                    is CognitoAuthResult.Success -> {
+                        val tokens = authResult.tokens
+                        _uiState.update { state ->
+                            if (tokens.idToken.isNullOrBlank() || tokens.accessToken.isNullOrBlank()) {
+                                state.copy(cognitoBusy = false, cognitoError = "Cognito no devolvio los tokens requeridos")
+                            } else state.copy(cognitoBusy = false, cognitoTokens = tokens)
+                        }
+                    }
+                    is CognitoAuthResult.Failure ->
+                        _uiState.update { it.copy(cognitoBusy = false, cognitoError = authResult.message) }
+                    CognitoAuthResult.Cancelled ->
+                        _uiState.update { it.copy(cognitoBusy = false, cognitoError = "Inicio de sesion cancelado") }
+                }
+            }
+        } catch (error: Exception) {
+            _uiState.update { it.copy(cognitoBusy = false, cognitoError = error.message ?: "Error de Cognito") }
+        }
+    }
+
+    fun onCognitoConsumed() {
+        _uiState.update { it.copy(cognitoTokens = null, cognitoError = null) }
+    }
+
+    fun onCognitoLaunchError(message: String) {
+        _uiState.update { it.copy(cognitoBusy = false, pendingCognitoIntent = null, cognitoError = message) }
+    }
+
+    // CognitoAuthManager lo proporciona AuthModule como @Singleton.
+    // No debe cerrarse aquí: otra instancia del LoginViewModel podría reutilizar
+    // el mismo administrador tras cerrar sesión o recrear la Activity.
 
     // CON guion (_uiState) = PRIVADO y MUTABLE: solo el ViewModel puede escribir.
     // MutableStateFlow guarda el LoginUiState actual y notifica a cada update.

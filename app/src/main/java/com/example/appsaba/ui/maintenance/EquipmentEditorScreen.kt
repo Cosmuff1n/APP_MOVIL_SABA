@@ -25,8 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.appsaba.domain.model.Service
 
-import com.example.appsaba.ui.data.RecordCard
-import com.example.appsaba.ui.data.ConfirmDelete
+import com.example.appsaba.ui.components.RecordCard
+import com.example.appsaba.ui.components.ConfirmDelete
 
 private val types = listOf("barriers", "lpr", "pos", "atm")
 private val statuses = listOf("operativo", "degradado", "fuera-servicio")

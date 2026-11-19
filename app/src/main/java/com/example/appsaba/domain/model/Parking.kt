@@ -8,5 +8,10 @@ data class Parking(
     val commune: String = "",
     val totalSpaces: Int = 0,
     val freeSpaces: Int = 0,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    /** Remote identity is separate from SQLite's local PK to prevent collisions. */
+    val remoteId: Long? = null,
+    val revision: Long? = null,
+    val remoteUpdatedAt: Long? = null,
+    val lastSyncedAt: Long? = null
 )

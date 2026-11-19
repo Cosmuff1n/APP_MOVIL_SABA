@@ -1,5 +1,10 @@
 package com.example.appsaba.di
 
+import com.example.appsaba.data.local.AppDatabase
+import com.example.appsaba.data.local.dao.ParkingDao
+import com.example.appsaba.data.local.dao.IncidentDao
+import com.example.appsaba.data.local.dao.UserDao
+import com.example.appsaba.data.local.dao.ServiceDao
 import android.content.Context
 import com.example.appsaba.data.local.*
 import dagger.Module
@@ -13,10 +18,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     /** Usa el singleton con MIGRATION_1_2. No reinicia ni borra las tablas previas. */
-    @Provides @Singleton fun provideDatabase(@ApplicationContext context: Context): SabaDatabase =
-        SabaDatabase.getInstance(context)
-    @Provides fun provideParkingDao(db: SabaDatabase): ParkingDao = db.parkingDao()
-    @Provides fun provideServiceDao(db: SabaDatabase): ServiceDao = db.serviceDao()
-    @Provides fun provideIncidentDao(db: SabaDatabase): IncidentDao = db.incidentDao()
-    @Provides fun provideUserDao(db: SabaDatabase): UserDao = db.userDao()
+    @Provides @Singleton fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
+        AppDatabase.getInstance(context)
+    @Provides fun provideParkingDao(db: AppDatabase): ParkingDao = db.parkingDao()
+    @Provides fun provideServiceDao(db: AppDatabase): ServiceDao = db.serviceDao()
+    @Provides fun provideIncidentDao(db: AppDatabase): IncidentDao = db.incidentDao()
+    @Provides fun provideUserDao(db: AppDatabase): UserDao = db.userDao()
 }

@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AppSaba"
 include(":app")
-include(":cognito-auth")
+

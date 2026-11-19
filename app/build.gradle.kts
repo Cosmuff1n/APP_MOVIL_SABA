@@ -95,7 +95,6 @@ dependencies {
     // Room: runtime + extensiones Kotlin; compilador separado via KSP
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room3.common)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.lifecycle.runtime.compose)
     testImplementation(libs.junit)
@@ -114,7 +113,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended) // Visibility/VisibilityOff viven aquí, no en core
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
-    implementation(project(":cognito-auth"))
     implementation("com.google.dagger:hilt-android:2.60.1")
     ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(platform(libs.androidx.compose.bom))

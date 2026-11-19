@@ -3,7 +3,7 @@ package com.example.appsaba.ui.users
 import androidx.lifecycle.viewModelScope
 import com.example.appsaba.domain.model.User
 import com.example.appsaba.domain.repository.UserRepository
-import com.example.appsaba.ui.common.ActionViewModel
+import com.example.appsaba.ui.common.CommonViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.*
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.*
 @HiltViewModel
 class UsersViewModel @Inject constructor(
     private val repository: UserRepository
-) : ActionViewModel() {
+) : CommonViewModel() {
     val uiState: StateFlow<UsersUiState> = combine(repository.observeAll(), status) { list, action ->
         UsersUiState(list, action.busy, action.feedback)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UsersUiState())

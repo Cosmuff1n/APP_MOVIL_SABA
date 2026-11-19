@@ -9,11 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.cognitoauth.CognitoAuthManager
-import com.example.appsaba.config.SabaCognitoConfig
-import com.example.appsaba.ui.navigation.SabaMainScaffold
+import com.example.appsaba.auth.CognitoAuthManager
+import com.example.appsaba.core.config.cognitoConfigFromBuild
 import com.example.appsaba.ui.login.LoginScreen
 import com.example.appsaba.ui.theme.AppSabaTheme
+import com.example.appsaba.domain.model.Session
+import com.example.appsaba.data.local.datasource.SessionLocalDataSource
 import kotlinx.coroutines.launch
 
 @dagger.hilt.android.AndroidEntryPoint
@@ -24,33 +25,37 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppSabaTheme {
-                // Durante esta etapa no conservamos tokens JWT en el estado guardado
-                // de Android. Si la app se recrea, se pide iniciar sesión otra vez.
-                var token: String? by remember { mutableStateOf(null) }
-                var isCognitoSession by remember { mutableStateOf(false) }
-                var cognitoAccessToken: String? by remember { mutableStateOf(null) }
+                // Nunca en SavedState: AndroidKeyStore cifra el estado persistido.
+                val sessionStore = remember { SessionLocalDataSource(applicationContext) }
+                val restored = remember { sessionStore.load() }
+                var token: String? by remember { mutableStateOf(restored?.idToken) }
+                var isCognitoSession by remember { mutableStateOf(restored?.isCognito == true) }
+                var cognitoAccessToken: String? by remember { mutableStateOf(restored?.accessToken) }
                 val scope = rememberCoroutineScope()
 
                 val currentToken = token
                 if (currentToken == null) {
                     LoginScreen(
                         onLoginSuccess = { t ->
+                            runCatching { sessionStore.save(Session(t, null, false)) }
                             token = t
                             isCognitoSession = false
                             cognitoAccessToken = null
                         },
                         onCognitoLoginSuccess = { idToken, accessToken ->
+                            runCatching { sessionStore.save(Session(idToken, accessToken, true)) }
                             token = idToken
                             cognitoAccessToken = accessToken
                             isCognitoSession = true
                         }
                     )
                 } else {
-                    SabaMainScaffold(
+                    AppNavigation(
                         accessToken = currentToken,
                         cognitoAccessToken = cognitoAccessToken,
                         onLogout = {
                             val closeCognito = isCognitoSession
+                            sessionStore.clear()
                             // El token deja de estar accesible desde la UI de Saba.
                             token = null
                             isCognitoSession = false
@@ -60,7 +65,7 @@ class MainActivity : ComponentActivity() {
                                 scope.launch {
                                     val manager = CognitoAuthManager(
                                         applicationContext,
-                                        SabaCognitoConfig.create()
+                                        cognitoConfigFromBuild()
                                     )
                                     try {
                                         // Abre /logout en el navegador; Cognito borrará
