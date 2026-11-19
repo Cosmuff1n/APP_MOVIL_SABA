@@ -13,9 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @Transactional
 class ParkingRepositoryIntegrationTest {
-    @Autowired ParkingRepository repository;
 
-    @Test void persistsAndReadsParking() {
+    @Autowired
+    ParkingRepository repository;
+
+    @Test
+    void persistsAndReadsParking() {
         var entity = new ParkingEntity("Central", "Av 10", "Santiago", 100, 30, true,
                 System.currentTimeMillis());
         var saved = repository.saveAndFlush(entity);

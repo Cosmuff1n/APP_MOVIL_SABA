@@ -13,7 +13,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    public record ApiError(String code, String message, String timestamp) { }
+
+    public record ApiError(String code, String message, String timestamp) {
+    }
 
     @ExceptionHandler(ParkingNotFoundException.class)
     public ResponseEntity<ApiError> notFound(ParkingNotFoundException ex) {
@@ -40,7 +42,7 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
+        MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
     public ResponseEntity<ApiError> invalidRequest(Exception ex) {
         return response(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Cuerpo, ruta o encabezado no válido");
     }

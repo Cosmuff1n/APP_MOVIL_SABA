@@ -21,12 +21,18 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ParkingServiceImplTest {
-    @Mock ParkingRepository repository;
+
+    @Mock
+    ParkingRepository repository;
     ParkingServiceImpl service;
 
-    @BeforeEach void setup() { service = new ParkingServiceImpl(repository); }
+    @BeforeEach
+    void setup() {
+        service = new ParkingServiceImpl(repository);
+    }
 
-    @Test void createTrimsNameAndDefaults() {
+    @Test
+    void createTrimsNameAndDefaults() {
         when(repository.saveAndFlush(any())).thenAnswer(a -> a.getArgument(0));
         var dto = service.create(new ParkingCreateDto(" Central ", null, null, null, null, null));
         assertEquals("Central", dto.name());
@@ -36,13 +42,15 @@ class ParkingServiceImplTest {
         verify(repository).saveAndFlush(any(ParkingEntity.class));
     }
 
-    @Test void createRejectsInvalidSpaces() {
-        assertThrows(InvalidParkingException.class, () ->
-                service.create(new ParkingCreateDto("Centro", "", "", 10, 12, true)));
+    @Test
+    void createRejectsInvalidSpaces() {
+        assertThrows(InvalidParkingException.class, ()
+                -> service.create(new ParkingCreateDto("Centro", "", "", 10, 12, true)));
         verifyNoInteractions(repository);
     }
 
-    @Test void listReturnsDto() {
+    @Test
+    void listReturnsDto() {
         when(repository.findAllByOrderByNameAsc()).thenReturn(List.of(
                 new ParkingEntity("A", "Av 1", "Santiago", 10, 8, true, 1000L)));
         var result = service.list();
@@ -51,20 +59,23 @@ class ParkingServiceImplTest {
         assertEquals("Activo", result.getFirst().status());
     }
 
-    @Test void getMissingReturns404Exception() {
+    @Test
+    void getMissingReturns404Exception() {
         when(repository.findById(8L)).thenReturn(Optional.empty());
         assertThrows(ParkingNotFoundException.class, () -> service.getById(8L));
     }
 
-    @Test void patchChecksRevision() {
+    @Test
+    void patchChecksRevision() {
         ParkingEntity e = new ParkingEntity("Original", "", "", 0, 0, true, 1);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
-        assertThrows(RevisionConflictException.class, () ->
-                service.patch(4L, new ParkingPatchDto(25L, "Nuevo", null)));
+        assertThrows(RevisionConflictException.class, ()
+                -> service.patch(4L, new ParkingPatchDto(25L, "Nuevo", null)));
         verify(repository, never()).saveAndFlush(any());
     }
 
-    @Test void patchRenamesAndChangesActive() {
+    @Test
+    void patchRenamesAndChangesActive() {
         ParkingEntity e = new ParkingEntity("Antes", "", "", 0, 0, true, 1);
         ReflectionTestUtils.setField(e, "revision", 2L);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
@@ -79,7 +90,8 @@ class ParkingServiceImplTest {
         assertEquals(3L, result.revision());
     }
 
-    @Test void deleteWhenRevisionMatches() {
+    @Test
+    void deleteWhenRevisionMatches() {
         ParkingEntity e = new ParkingEntity("A", "", "", 0, 0, true, 1);
         ReflectionTestUtils.setField(e, "revision", 2L);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
@@ -88,15 +100,17 @@ class ParkingServiceImplTest {
         verify(repository).flush();
     }
 
-    @Test void patchRejectsEmptyChange() {
+    @Test
+    void patchRejectsEmptyChange() {
         ParkingEntity e = new ParkingEntity("Original", "", "", 0, 0, true, 1);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
         ReflectionTestUtils.setField(e, "revision", 2L);
-        assertThrows(InvalidParkingException.class, () ->
-                service.patch(4L, new ParkingPatchDto(2L, null, null)));
+        assertThrows(InvalidParkingException.class, ()
+                -> service.patch(4L, new ParkingPatchDto(2L, null, null)));
     }
 
-    @Test void deleteRejectsWrongRevision() {
+    @Test
+    void deleteRejectsWrongRevision() {
         ParkingEntity e = new ParkingEntity("A", "", "", 0, 0, true, 1);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
         assertThrows(RevisionConflictException.class, () -> service.delete(4L, 3L));

@@ -6,6 +6,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CognitoAccessTokenValidatorTest {
+
     private Jwt jwt(String type, String clientId) {
         Instant now = Instant.now();
         return Jwt.withTokenValue("fake-for-unit-test-only")
@@ -17,17 +18,20 @@ class CognitoAccessTokenValidatorTest {
                 .build();
     }
 
-    @Test void acceptsCorrectAccessTokenClaims() {
+    @Test
+    void acceptsCorrectAccessTokenClaims() {
         assertFalse(new CognitoAccessTokenValidator("saba-client")
                 .validate(jwt("access", "saba-client")).hasErrors());
     }
 
-    @Test void rejectsIdToken() {
+    @Test
+    void rejectsIdToken() {
         assertTrue(new CognitoAccessTokenValidator("saba-client")
                 .validate(jwt("id", "saba-client")).hasErrors());
     }
 
-    @Test void rejectsWrongClientId() {
+    @Test
+    void rejectsWrongClientId() {
         assertTrue(new CognitoAccessTokenValidator("saba-client")
                 .validate(jwt("access", "another-client")).hasErrors());
     }

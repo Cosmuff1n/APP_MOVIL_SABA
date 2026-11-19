@@ -11,6 +11,7 @@ import jakarta.persistence.Version;
 @Entity
 @Table(name = "parkings")
 public class ParkingEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,11 +43,12 @@ public class ParkingEntity {
     @Column(name = "updated_at", nullable = false)
     private Long updatedAt;
 
-    protected ParkingEntity() { }
+    protected ParkingEntity() {
+    }
 
     public ParkingEntity(String name, String address, String commune,
-                         int totalSpaces, int freeSpaces, boolean isActive,
-                         long updatedAt) {
+            int totalSpaces, int freeSpaces, boolean isActive,
+            long updatedAt) {
         this.name = name;
         this.address = address;
         this.commune = commune;
@@ -56,17 +58,51 @@ public class ParkingEntity {
         this.updatedAt = updatedAt;
     }
 
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getAddress() { return address; }
-    public String getCommune() { return commune; }
-    public int getTotalSpaces() { return totalSpaces; }
-    public int getFreeSpaces() { return freeSpaces; }
-    public boolean isActive() { return isActive; }
-    public Long getRevision() { return revision; }
-    public Long getUpdatedAt() { return updatedAt; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setName(String name) { this.name = name; }
-    public void setActive(boolean active) { this.isActive = active; }
-    public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
+    public String getName() {
+        return name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getCommune() {
+        return commune;
+    }
+
+    public int getTotalSpaces() {
+        return totalSpaces;
+    }
+
+    public int getFreeSpaces() {
+        return freeSpaces;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public Long getRevision() {
+        return revision;
+    }
+
+    public Long getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active;
+    }
+
+    public void setUpdatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
