@@ -1,0 +1,7 @@
+workspace:
+  id: 96982b6f-b631-4265-827b-100ae57ca052
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+cloudResources:
+  collections:
+    ../postman/collections/saba-backend-1: 55057522-57b44fa6-5b11-4877-8703-cc42d29291a9

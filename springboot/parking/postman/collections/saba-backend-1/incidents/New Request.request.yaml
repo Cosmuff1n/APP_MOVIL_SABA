@@ -1,0 +1,13 @@
+$kind: http-request
+url: http://localhost:8080/api/incidents
+method: GET
+auth:
+  type: oauth2
+  credentials:
+    clientId: 69u0p21v2mr4342hegl9g02cph
+    accessTokenUrl: https://us-east-1pgbp8klkz.auth.us-east-1.amazoncognito.com/oauth2/token
+    authUrl: https://us-east-1pgbp8klkz.auth.us-east-1.amazoncognito.com/oauth2/authorize
+    tokenName: SABA Cognito
+    addTokenTo: header
+    grant_type: authorization_code_with_pkce
+order: 1000
