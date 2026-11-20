@@ -1,0 +1,7 @@
+# Copia este archivo como config/local.properties. NO subas este archivo con datos reales.
+DB_URL=jdbc:postgresql://TU_HOST:5432/postgres?sslmode=require
+DB_USER=TU_USUARIO
+DB_PASSWORD=TU_PASSWORD
+COGNITO_ISSUER_URI=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_TU_USER_POOL
+COGNITO_APP_CLIENT_ID=TU_APP_CLIENT_PUBLICO
+# SERVER_PORT=8081

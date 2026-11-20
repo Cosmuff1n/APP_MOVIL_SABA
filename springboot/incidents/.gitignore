@@ -5,3 +5,6 @@ build/
 .nb-gradle/
 *.iml
 .env
+
+/config/local.properties
+**/config/local.properties

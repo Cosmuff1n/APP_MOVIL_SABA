@@ -1,6 +1,6 @@
 # SABA — Microservicio de Incidencias (`incidents`)
 
-Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache NetBeans** desde `springboot/incidents/`. Su arquitectura sigue el capítulo **13** de `INFORME_SABA_1_1.md` y es independiente de Android, del microservicio de Estacionamientos y del futuro BFF.
+Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache NetBeans** desde `springboot/incidents/`. Su arquitectura sigue el capítulo **13** de `INFORME_SABA_1_1.md` y es independiente de Android, del microservicio de Estacionamientos y del BFF incorporado en `springboot/bff/`.
 
 > **Estado:** código fuente preparado. No se ha confirmado compilación con JDK 26, PostgreSQL real ni Cognito real. **No** se ha integrado a Android, ni se han implementado cargas remotas de fotografías/vídeos.
 
@@ -17,7 +17,7 @@ Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache 
 | `dto/IncidentCreateDto.java` | Formato JSON de creación | Controller y ServiceImpl |
 | `dto/IncidentUpdateDto.java` | Formato JSON de actualización y cierre | Controller y ServiceImpl |
 | `client/ParkingClient.java` | Interfaz para comprobar `parkingId` remoto | ServiceImpl |
-| `client/ParkingClientImpl.java` | Implementa consulta `GET` con Spring `RestClient` | `GET /api/parkings/{id}` del MS parking |
+| `client/ParkingClientImpl.java` | Implementa consulta `GET` con Spring `RestClient` | `GET /api/parking/{id}` del MS parking |
 | `config/SecurityConfig.java` | Valida la firma, issuer y expiración del JWT mediante Spring Security | Cognito (JWKS públicos) |
 | `config/CognitoAccessTokenValidator.java` | Exige claim `token_use=access` y, si se configura, `client_id` | Spring Security |
 | `exception/` | Convierte errores en respuestas `400`, `404`, `409`, `503` | Controller/ServiceImpl/Client |
@@ -27,7 +27,7 @@ Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache 
 Flujo de creación:
 
 ```text
-FUTURO: Android → Retrofit → BFF/IncidentClient → IncidentController
+PREVISTO (Android pendiente): Android → Retrofit → BFF/IncidentClient → IncidentController
                                                        ↓
                                              IncidentService (interfaz)
                                                        ↓
@@ -45,7 +45,7 @@ Al crear, Incidencias comprueba que el **ID remoto** del parking existe. Propaga
 ## 2. Requisitos y bases de datos
 
 - JDK **26** y Gradle Wrapper **9.9.1** incluidos en la configuración del proyecto (el JDK debe estar instalado).
-- PostgreSQL ejecutándose. Crear solamente la base de datos; Flyway crea las tablas:
+- PostgreSQL ejecutándose (tu Supabase PostgreSQL actual se configura mediante `config/local.properties`). Si usas PostgreSQL local, crear solamente la base de datos; Flyway crea las tablas:
 
 ```sql
 CREATE DATABASE saba_incidents;
@@ -67,7 +67,7 @@ $env:PARKING_SERVICE_URL = "http://localhost:8081"
 .\gradlew.bat bootRun
 ```
 
-Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parking` conserva **8081**. El BFF deberá utilizar otro puerto, por definir.
+Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parking` conserva **8081**. El BFF ya incorporado utiliza **8080**.
 
 **Seguridad:** sin `COGNITO_ISSUER_URI` se rechazan todas las solicitudes autenticadas; **no** existe un modo abierto de prueba. El microservicio verifica access tokens Cognito y no almacena contraseñas. El control de permisos por perfil y parking **está pendiente** del contrato de roles; por ahora un token válido da acceso a los endpoints implementados. No desplegar para datos sensibles sin definir y validar esos permisos.
 
@@ -81,7 +81,7 @@ Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parki
 | `PUT` | `/api/incidents/{id}` | Reemplazar campos editables o registrar resolución | `200` + `IncidentDto`, o error |
 | `DELETE` | **No implementado** | El capítulo 13 lo declara opcional; falta definir política de retención/trazabilidad | No se publicará hasta decidir política |
 
-Las rutas **públicas** Android quedarán a cargo del BFF cuando exista. Este microservicio puede probarse directamente mediante una herramienta HTTP con un access token válido.
+Las rutas **públicas** Android pasan por el BFF ya implementado en el puerto **8080**, una vez configurada la app. Este microservicio aún se puede probar directamente por HTTP con un access token válido.
 
 ### POST: ejemplo
 

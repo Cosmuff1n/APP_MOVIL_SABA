@@ -1,6 +1,6 @@
 # SABA — Microservicio de Estacionamientos (`parking`)
 
-**Alcance:** proyecto Java + Spring Boot + Gradle/Groovy para abrir con **Apache NetBeans**, en `springboot/parking/`. Implementa exclusivamente el MS de Estacionamientos del capítulo 13 del informe SABA 1.1. No cambia Android, no incluye un BFF ni otro MS.
+**Alcance:** proyecto Java + Spring Boot + Gradle/Groovy para abrir con **Apache NetBeans**, en `springboot/parking/`. Implementa exclusivamente el MS de Estacionamientos del capítulo 13 del informe SABA 1.1. No cambia Android; el BFF integrado se encuentra en `springboot/bff/` y el otro MS en `springboot/incidents/`.
 
 ## Arquitectura
 
@@ -16,12 +16,12 @@
 
 - JDK **26**, como decidiste para el proyecto de NetBeans.
 - Gradle Wrapper **9.9.1** (incluido). Internet disponible la primera vez para descargar Gradle y dependencias.
-- PostgreSQL instalado y ejecutándose, con BD `saba_parking`.
+- PostgreSQL disponible (tu Supabase PostgreSQL actual puede utilizarse con `config/local.properties`; no hace falta instalar una segunda BD local).
 - Un User Pool Cognito existente para probar rutas protegidas.
 
 ## Preparar PostgreSQL
 
-Crear la base de datos (con `psql`, como usuario con permisos):
+Si usas PostgreSQL local, puedes crear la BD (con `psql`, como usuario con permisos):
 
 ```sql
 CREATE DATABASE saba_parking;
@@ -55,13 +55,13 @@ Sin `COGNITO_ISSUER_URI`, el servidor puede iniciar para diagnóstico pero todas
 
 | Método | Ruta interna del MS | Contenido | Respuesta |
 | --- | --- | --- | --- |
-| GET | `/api/parkings` | Authorization: Bearer | 200 + lista `ParkingDto` |
-| GET | `/api/parkings/{id}` | Authorization: Bearer | 200 + `ParkingDto` (uso interno futuro) |
-| POST | `/api/parkings` | `ParkingCreateDto` | 201 + `ParkingDto` |
-| PATCH | `/api/parkings/{id}` | `ParkingPatchDto` | 200 + `ParkingDto` |
-| DELETE | `/api/parkings/{id}` | `If-Match: <revision>` | 204 sin cuerpo |
+| GET | `/api/parking` | Authorization: Bearer | 200 + lista `ParkingDto` |
+| GET | `/api/parking/{id}` | Authorization: Bearer | 200 + `ParkingDto` (uso interno futuro) |
+| POST | `/api/parking` | `ParkingCreateDto` | 201 + `ParkingDto` |
+| PATCH | `/api/parking/{id}` | `ParkingPatchDto` | 200 + `ParkingDto` |
+| DELETE | `/api/parking/{id}` | `If-Match: <revision>` | 204 sin cuerpo |
 
-**Importante:** el informe contiene una mención a `PUT`, pero el Retrofit real `Ec2ParkingApiService.kt` define **PATCH**. La implementación sigue el contrato efectivo para no romper Android. La ruta `/api/parkings` aquí es *interna* mientras no exista BFF: Android no se redirige a este MS todavía. El futuro BFF publicará la ruta a Android y utilizará `RestClient` para llamar este microservicio.
+**Importante:** esta versión utiliza `/api/parking` **en singular**, por decisión posterior de integración, y **PATCH** para modificar. El BFF ya implementado publica la misma ruta en el puerto 8080 con `RestClient`. Android no fue modificado en este ZIP; su Retrofit debe adaptarse a esta ruta y apuntar al BFF antes de la integración móvil.
 
 ### JSON de respuesta (campos reales del cliente Kotlin)
 
@@ -88,7 +88,7 @@ Sin `COGNITO_ISSUER_URI`, el servidor puede iniciar para diagnóstico pero todas
 ### Ejemplos de solicitudes
 
 ```http
-POST /api/parkings
+POST /api/parking
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -96,7 +96,7 @@ Content-Type: application/json
 ```
 
 ```http
-PATCH /api/parkings/15
+PATCH /api/parking/15
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -104,7 +104,7 @@ Content-Type: application/json
 ```
 
 ```http
-DELETE /api/parkings/15
+DELETE /api/parking/15
 Authorization: Bearer <access_token>
 If-Match: 1
 ```
@@ -117,7 +117,7 @@ If-Match: 1
 - `409` revisión desactualizada, incluida concurrencia JPA.
 - `201` creado; `204` eliminado correctamente.
 
-**Pendiente:** definición de roles/permisos específicos por operación (capítulo 13.19). Aquí se exige JWT válido a todos los endpoints, pero no se inventan autorizaciones por perfil sin especificación. El BFF también tendrá su propia validación JWT.
+**Pendiente:** definición de roles/permisos específicos por operación (capítulo 13.19). Aquí se exige JWT válido a todos los endpoints, pero no se inventan autorizaciones por perfil sin especificación. El BFF también valida JWT.
 
 ## Pruebas y alcance real
 
@@ -131,10 +131,8 @@ Informe JaCoCo: `build/reports/jacoco/test/html/index.html`.
 
 **Nota de verificación:** los archivos fuente se han preparado conforme al contrato, pero **la compilación completa con Gradle/JDK 26 y una prueba de PostgreSQL/Cognito reales deben efectuarse en tu entorno**. La creación de los archivos por sí sola no demuestra un build exitoso.
 
-## Integración posterior
+## Integración con BFF
 
-1. Crear BFF independiente con `ParkingBffController`, `ParkingClient` y `ParkingClientImpl` (`RestClient`), transmitiendo JWT y `If-Match`.
-2. Configurar la URL base Retrofit de Android al BFF **solo cuando esté funcionando**.
-3. Validar CRUD completo desde el dispositivo y caché Room; luego implementar el MS de Incidencias.
+El BFF en `springboot/bff/` incluye `ParkingBffController`, `ParkingClient` y `ParkingClientImpl` (`RestClient`), transmitiendo JWT y `If-Match`. La integración con `incidents` también está implementada en el backend; queda ejecutar las pruebas en Java 26, configurar Retrofit de Android al BFF **solo cuando esté funcionando**, y validar las operaciones desde el teléfono.
 
 No se incorporan Swagger, tracing, dashboard de monitoreo, módulo Auth ni Clients innecesarios dentro de `parking`.

@@ -44,7 +44,7 @@ public class ParkingClientImpl implements ParkingClient {
         }
         try {
             client.get()
-                    .uri("/api/parkings/{id}", remoteParkingId)
+                    .uri("/api/parking/{id}", remoteParkingId)
                     .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
                     .retrieve()
                     .toBodilessEntity();

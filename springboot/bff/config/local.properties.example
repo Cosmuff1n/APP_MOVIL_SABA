@@ -1,0 +1,6 @@
+# Copiar como config/local.properties (no se versiona). Variables NO secretas de ejemplo.
+# El emisor es el User Pool issuer; NO el dominio OAuth de login.
+COGNITO_ISSUER_URI=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_TU_USER_POOL
+COGNITO_APP_CLIENT_ID=TU_APP_CLIENT_PUBLICO
+PARKING_SERVICE_URL=http://localhost:8081
+INCIDENTS_SERVICE_URL=http://localhost:8082
