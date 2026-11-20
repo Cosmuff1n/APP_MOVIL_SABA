@@ -1,8 +1,8 @@
 https://us-east-1pgbp8klkz.auth.us-east-1.amazoncognito.com.auth.us-east-1.amazoncognito.com
 
-https://us-east-1pgbp8klkz/oauth2/authorize
+https://us-east-1pgbp8klkz.auth.us-east-1.amazoncognito.com/oauth2/authorize
 
-https://us-east-1pgbp8klkz/oauth2/token
+https://us-east-1pgbp8klkz.auth.us-east-1.amazoncognito.com/oauth2/token
 
 69u0p21v2mr4342hegl9g02cph
 
