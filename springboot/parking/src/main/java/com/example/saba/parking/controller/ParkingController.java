@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/parkings")
+@RequestMapping("/api/parking")
 public class ParkingController {
 
     private final ParkingService service;
@@ -43,7 +43,7 @@ public class ParkingController {
     @PostMapping
     public ResponseEntity<ParkingDto> create(@Valid @RequestBody ParkingCreateDto request) {
         ParkingDto created = service.create(request);
-        return ResponseEntity.created(URI.create("/api/parkings/" + created.id())).body(created);
+        return ResponseEntity.created(URI.create("/api/parking/" + created.id())).body(created);
     }
 
     // PATCH y no PUT: es el método declarado por Ec2ParkingApiService.kt.

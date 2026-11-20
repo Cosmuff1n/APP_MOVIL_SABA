@@ -1,5 +1,5 @@
 $kind: http-request
-url: http://localhost:8081/api/parkings
+url: http://localhost:8081/api/parking
 method: GET
 headers:
   - key: Authorization
@@ -19,5 +19,4 @@ auth:
     clientId: 69u0p21v2mr4342hegl9g02cph
     scope: openid
     client_authentication: body
-examples: ./.resources/getParking.resources/examples
-order: 1000
+order: 2000
