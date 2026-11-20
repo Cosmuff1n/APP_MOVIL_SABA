@@ -70,3 +70,6 @@ saba.db-wal
 saba.db-shm
 .env
 *.pem
+
+/springboot/parking/config/local.properties
+/springboot/incidents/config/local.properties
