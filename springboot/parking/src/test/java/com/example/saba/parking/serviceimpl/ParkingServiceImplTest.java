@@ -1,7 +1,6 @@
 package com.example.saba.parking.serviceimpl;
 
-import com.example.saba.parking.dto.ParkingCreateDto;
-import com.example.saba.parking.dto.ParkingPatchDto;
+import com.example.saba.parking.dto.ParkingDto;
 import com.example.saba.parking.exception.InvalidParkingException;
 import com.example.saba.parking.exception.ParkingNotFoundException;
 import com.example.saba.parking.exception.RevisionConflictException;
@@ -31,10 +30,22 @@ class ParkingServiceImplTest {
         service = new ParkingServiceImpl(repository);
     }
 
+    // El mismo ParkingDto sirve para POST, PATCH y respuestas GET.
+    private static ParkingDto createRequest(String name, String address, String commune,
+                                            Integer total, Integer free, Boolean active) {
+        return new ParkingDto(null, name, address, commune, total, free,
+                active, null, null, null);
+    }
+
+    private static ParkingDto patchRequest(Long revision, String name, Boolean active) {
+        return new ParkingDto(null, name, null, null, null, null,
+                active, revision, null, null);
+    }
+
     @Test
     void createTrimsNameAndDefaults() {
         when(repository.saveAndFlush(any())).thenAnswer(a -> a.getArgument(0));
-        var dto = service.create(new ParkingCreateDto(" Central ", null, null, null, null, null));
+        var dto = service.create(createRequest(" Central ", null, null, null, null, null));
         assertEquals("Central", dto.name());
         assertEquals("", dto.address());
         assertEquals(0, dto.totalSpaces());
@@ -45,7 +56,7 @@ class ParkingServiceImplTest {
     @Test
     void createRejectsInvalidSpaces() {
         assertThrows(InvalidParkingException.class, ()
-                -> service.create(new ParkingCreateDto("Centro", "", "", 10, 12, true)));
+                -> service.create(createRequest("Centro", "", "", 10, 12, true)));
         verifyNoInteractions(repository);
     }
 
@@ -70,7 +81,7 @@ class ParkingServiceImplTest {
         ParkingEntity e = new ParkingEntity("Original", "", "", 0, 0, true, 1);
         when(repository.findById(4L)).thenReturn(Optional.of(e));
         assertThrows(RevisionConflictException.class, ()
-                -> service.patch(4L, new ParkingPatchDto(25L, "Nuevo", null)));
+                -> service.patch(4L, patchRequest(25L, "Nuevo", null)));
         verify(repository, never()).saveAndFlush(any());
     }
 
@@ -83,7 +94,7 @@ class ParkingServiceImplTest {
             ReflectionTestUtils.setField(e, "revision", 3L);
             return e;
         });
-        var result = service.patch(4L, new ParkingPatchDto(2L, " Despues ", false));
+        var result = service.patch(4L, patchRequest(2L, " Despues ", false));
         assertEquals("Despues", result.name());
         assertFalse(result.isActive());
         assertEquals("Inactivo", result.status());
@@ -106,7 +117,23 @@ class ParkingServiceImplTest {
         when(repository.findById(4L)).thenReturn(Optional.of(e));
         ReflectionTestUtils.setField(e, "revision", 2L);
         assertThrows(InvalidParkingException.class, ()
-                -> service.patch(4L, new ParkingPatchDto(2L, null, null)));
+                -> service.patch(4L, patchRequest(2L, null, null)));
+    }
+
+    @Test
+    void createRejectsServerManagedFields() {
+        assertThrows(InvalidParkingException.class,
+                () -> service.create(new ParkingDto(99L, "A", null, null,
+                        null, null, null, null, null, null)));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void patchRejectsFieldsNotIncludedInPatchContract() {
+        assertThrows(InvalidParkingException.class,
+                () -> service.patch(4L, new ParkingDto(null, "A", "Otra dirección", null,
+                        null, null, null, 0L, null, null)));
+        verifyNoInteractions(repository);
     }
 
     @Test

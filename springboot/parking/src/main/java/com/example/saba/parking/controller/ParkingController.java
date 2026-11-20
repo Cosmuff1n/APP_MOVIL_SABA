@@ -1,8 +1,6 @@
 package com.example.saba.parking.controller;
 
-import com.example.saba.parking.dto.ParkingCreateDto;
 import com.example.saba.parking.dto.ParkingDto;
-import com.example.saba.parking.dto.ParkingPatchDto;
 import com.example.saba.parking.exception.InvalidParkingException;
 import com.example.saba.parking.service.ParkingService;
 import jakarta.validation.Valid;
@@ -41,14 +39,14 @@ public class ParkingController {
     }
 
     @PostMapping
-    public ResponseEntity<ParkingDto> create(@Valid @RequestBody ParkingCreateDto request) {
+    public ResponseEntity<ParkingDto> create(@Valid @RequestBody ParkingDto request) {
         ParkingDto created = service.create(request);
         return ResponseEntity.created(URI.create("/api/parking/" + created.id())).body(created);
     }
 
     // PATCH y no PUT: es el método declarado por Ec2ParkingApiService.kt.
     @PatchMapping("/{id}")
-    public ParkingDto patch(@PathVariable long id, @Valid @RequestBody ParkingPatchDto request) {
+    public ParkingDto patch(@PathVariable long id, @Valid @RequestBody ParkingDto request) {
         return service.patch(id, request);
     }
 

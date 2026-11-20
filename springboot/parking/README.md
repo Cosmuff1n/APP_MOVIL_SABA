@@ -6,7 +6,7 @@
 
 `ParkingController → ParkingService → ParkingServiceImpl → ParkingRepository (JPA) → ParkingEntity → PostgreSQL`.
 
-- `dto/`: define exactamente el JSON que intercambia con Android; no contiene Entities de Room.
+- `dto/ParkingDto.java`: único DTO para entrada (POST/PATCH) y salida (GET/POST/PATCH); no contiene Entities de Room.
 - `config/SecurityConfig`: valida JWT Cognito; **sin issuer configurado no admite solicitudes**.
 - `exception/`: traduce errores de negocio a códigos HTTP sin revelar trazas internas.
 - `db/migration/`: primera migración Flyway de la base de datos propia.
@@ -57,8 +57,8 @@ Sin `COGNITO_ISSUER_URI`, el servidor puede iniciar para diagnóstico pero todas
 | --- | --- | --- | --- |
 | GET | `/api/parking` | Authorization: Bearer | 200 + lista `ParkingDto` |
 | GET | `/api/parking/{id}` | Authorization: Bearer | 200 + `ParkingDto` (uso interno futuro) |
-| POST | `/api/parking` | `ParkingCreateDto` | 201 + `ParkingDto` |
-| PATCH | `/api/parking/{id}` | `ParkingPatchDto` | 200 + `ParkingDto` |
+| POST | `/api/parking` | `ParkingDto` (campos de creación) | 201 + `ParkingDto` |
+| PATCH | `/api/parking/{id}` | `ParkingDto` (`revision`, `name` o `isActive`) | 200 + `ParkingDto` |
 | DELETE | `/api/parking/{id}` | `If-Match: <revision>` | 204 sin cuerpo |
 
 **Importante:** esta versión utiliza `/api/parking` **en singular**, por decisión posterior de integración, y **PATCH** para modificar. El BFF ya implementado publica la misma ruta en el puerto 8080 con `RestClient`. Android no fue modificado en este ZIP; su Retrofit debe adaptarse a esta ruta y apuntar al BFF antes de la integración móvil.
@@ -84,6 +84,16 @@ Sin `COGNITO_ISSUER_URI`, el servidor puede iniciar para diagnóstico pero todas
 - `revision` es un `Long` controlado por JPA `@Version`; el primer registro comienza en **0** y luego incrementa. Android siempre debe enviar el valor **recibido** del servidor.
 - `status` indica "Activo" / "Inactivo" según `isActive`: no equivale al estado operativo de barreras ni cajeros.
 - El ID de PostgreSQL es el **id remoto**. Android mantiene separadamente `id` de Room y `remoteId`.
+
+### Único DTO, reglas por operación
+
+El archivo `dto/ParkingDto.java` reúne los **10 campos** del contrato remoto. Ya no existen `ParkingCreateDto.java` ni `ParkingPatchDto.java`. En el request se envía **solo lo que admite la operación**:
+
+- **POST:** `name` requerido; `address`, `commune`, `totalSpaces`, `freeSpaces` e `isActive` opcionales. `id`, `revision`, `updatedAt` y `status` son datos de servidor y se rechazan si se envían.
+- **PATCH:** `revision` obligatoria y al menos uno de `name` / `isActive`. Otros campos se rechazan; no permite cambiar capacidad ni dirección.
+- **GET:** respuesta con todos los campos, incluido `status`, fecha de actualización y revisión de concurrencia.
+- Campos ausentes se interpretan como `null` al deserializar; eso permite distinguir "omitido" de `false` o `0`. El ServiceImpl conserva las validaciones y valores iniciales.
+- JSON con campos no declarados en el DTO devuelve `400`, para no ignorar entradas imprevistas.
 
 ### Ejemplos de solicitudes
 

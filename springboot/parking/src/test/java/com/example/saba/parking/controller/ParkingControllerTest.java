@@ -38,23 +38,26 @@ class ParkingControllerTest {
 
     @Test
     void createReturns201() throws Exception {
-        when(service.create(any())).thenReturn(new ParkingDto(1L, "A", "", "", 0, 0, true,
-                0L, 1000L, "Activo"));
+        when(service.create(any(ParkingDto.class)))
+                .thenReturn(new ParkingDto(1L, "A", "", "", 0, 0, true,
+                        0L, 1000L, "Activo"));
         mvc.perform(post("/api/parking").contentType(MediaType.APPLICATION_JSON)
-                .content("{"name":"A
-        "}"))
+                        .content("{\"name\":\"A\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/parking/1"));
+        verify(service).create(any(ParkingDto.class));
     }
 
     @Test
     void patchUsesPatchNotPut() throws Exception {
-        when(service.patch(eq(1L), any())).thenReturn(new ParkingDto(1L, "Nuevo", "", "",
-                0, 0, true, 1L, 1000L, "Activo"));
+        when(service.patch(eq(1L), any(ParkingDto.class)))
+                .thenReturn(new ParkingDto(1L, "Nuevo", "", "", 0, 0,
+                        true, 1L, 1000L, "Activo"));
         mvc.perform(patch("/api/parking/1").contentType(MediaType.APPLICATION_JSON)
-                .content("{"revision":0,"name":"Nuevo
-        "}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Nuevo"));
+                        .content("{\"revision\":0,\"name\":\"Nuevo\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Nuevo"));
+        verify(service).patch(eq(1L), any(ParkingDto.class));
     }
 
     @Test

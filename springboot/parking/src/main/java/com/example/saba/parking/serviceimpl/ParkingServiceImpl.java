@@ -1,8 +1,6 @@
 package com.example.saba.parking.serviceimpl;
 
-import com.example.saba.parking.dto.ParkingCreateDto;
 import com.example.saba.parking.dto.ParkingDto;
-import com.example.saba.parking.dto.ParkingPatchDto;
 import com.example.saba.parking.exception.InvalidParkingException;
 import com.example.saba.parking.exception.ParkingNotFoundException;
 import com.example.saba.parking.exception.RevisionConflictException;
@@ -46,10 +44,17 @@ public class ParkingServiceImpl implements ParkingService {
     }
 
     @Override
-    public ParkingDto create(ParkingCreateDto request) {
+    public ParkingDto create(ParkingDto request) {
+        if (request.id() != null || request.revision() != null
+                || request.updatedAt() != null || request.status() != null) {
+            throw new InvalidParkingException("id, revision, updatedAt y status son datos del servidor");
+        }
         String name = requiredName(request.name());
         String address = trimOptional(request.address());
         String commune = trimOptional(request.commune());
+        if (address.length() > 255 || commune.length() > 120) {
+            throw new InvalidParkingException("address o commune supera el largo permitido");
+        }
         int total = request.totalSpaces() == null ? 0 : request.totalSpaces();
         int free = request.freeSpaces() == null ? 0 : request.freeSpaces();
         boolean active = request.isActive() == null || request.isActive();
@@ -60,7 +65,13 @@ public class ParkingServiceImpl implements ParkingService {
     }
 
     @Override
-    public ParkingDto patch(long id, ParkingPatchDto request) {
+    public ParkingDto patch(long id, ParkingDto request) {
+        // Mantener el contrato PATCH original: solo revision, name e isActive.
+        if (request.id() != null || request.updatedAt() != null || request.status() != null
+                || request.address() != null || request.commune() != null
+                || request.totalSpaces() != null || request.freeSpaces() != null) {
+            throw new InvalidParkingException("PATCH solo admite revision, name e isActive");
+        }
         ParkingEntity entity = find(id);
         verifyRevision(entity, request.revision());
         if (request.name() == null && request.isActive() == null) {

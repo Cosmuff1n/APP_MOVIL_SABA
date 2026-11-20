@@ -13,9 +13,7 @@ Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache 
 | `serviceimpl/IncidentServiceImpl.java` | Valida datos, estados y resolución; transforma DTO/Entity y coordina persistencia | `IncidentRepository`, `ParkingClient` |
 | `repository/IncidentRepository.java` | Ejecuta consultas de su propia base PostgreSQL con JPA | `IncidentEntity` |
 | `model/IncidentEntity.java` | Define la tabla `incidents`, con `@Version` interno | JPA / PostgreSQL |
-| `dto/IncidentDto.java` | Formato JSON de respuesta con nombres compatibles con `domain/model/Incident.kt` | Controller y ServiceImpl |
-| `dto/IncidentCreateDto.java` | Formato JSON de creación | Controller y ServiceImpl |
-| `dto/IncidentUpdateDto.java` | Formato JSON de actualización y cierre | Controller y ServiceImpl |
+| `dto/IncidentDto.java` | Único DTO para solicitudes de creación y actualización y respuestas remotas | Controller y ServiceImpl |
 | `client/ParkingClient.java` | Interfaz para comprobar `parkingId` remoto | ServiceImpl |
 | `client/ParkingClientImpl.java` | Implementa consulta `GET` con Spring `RestClient` | `GET /api/parking/{id}` del MS parking |
 | `config/SecurityConfig.java` | Valida la firma, issuer y expiración del JWT mediante Spring Security | Cognito (JWKS públicos) |
@@ -128,13 +126,20 @@ Para actualizar un incidente **sin resolver**, usar `isResolved:false` y omitir 
 
 ### JSON de respuesta
 
-`IncidentDto` conserva los nombres de campos de `Incident.kt`: `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterUserId`, `reporterName`, `failureType`, `description`, `status`, `reportedAt`, `evidenceUri`, `evidenceFileName`, `evidenceMimeType`, `isResolved`, `resolvedByUserId`, `resolvedByName`, `resolutionDescription` y `resolvedAt`.
+El único `IncidentDto.java` contiene **13 campos remotos implementados**: `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterName`, `failureType`, `description`, `status`, `reportedAt`, `isResolved`, `resolvedByName`, `resolutionDescription`, `resolvedAt`.
 
-**Limitación deliberada:** `reporterUserId`, `resolvedByUserId` y los campos de evidencia se devuelven como `null`. Los IDs locales de Room no identifican usuarios remotos, y guardar `file://` / `content://` del teléfono en PostgreSQL **no permitiría a otros dispositivos acceder a la imagen**. Para evidencias se necesitará un endpoint de subida y almacenamiento de archivos/objetos. Actualmente `POST` devuelve **400** si se intenta enviar URI o metadatos de evidencia sin archivo.
+No se incluyen `reporterUserId` ni `resolvedByUserId` (son identificadores locales que no deben usarse como identidad global), ni `evidenceUri`, `evidenceFileName` o `evidenceMimeType` (todavía no se suben archivos a un almacenamiento remoto). **No enviar estos campos.** Para evitar ignorar inadvertidamente evidencias, la deserialización del microservicio rechaza propiedades JSON desconocidas con `400`. Una implementación posterior de subida de archivos necesitará un contrato real.
+
+**Reglas del único DTO según la operación:**
+
+- **POST:** requiere `ticketCode`, `parkingId` remoto, `serviceId`, `failureType` y `description`; admite `reporterName` y `status` (por defecto `degradado`). Se rechazan `id`, `reportedAt`, `resolvedAt` y datos de resolución. `isResolved` se permite solo ausente o `false`.
+- **PUT:** exige `failureType`, `description`, `status` e `isResolved`. Puede incluir `resolvedByName` y `resolutionDescription` **solo** al resolver (`isResolved=true`, entonces ambos son obligatorios). Rechaza modificaciones de `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterName` y fechas; el servidor asigna `resolvedAt`.
+- **GET:** devuelve los 13 campos remotos. Las reglas de validación por operación se mantienen en `IncidentServiceImpl`.
+
 
 ## 4. Respuestas y fallos
 
-- **400:** campos inválidos, estado desconocido, IDs no positivos, parking remoto inexistente, URI local de evidencia.
+- **400:** campos inválidos, estado desconocido, IDs no positivos, parking remoto inexistente o campos remotos no implementados (por ejemplo, evidencia local).
 - **401:** sin token válido / token incorrecto para Cognito.
 - **404:** ID de incidencia inexistente.
 - **409:** código de ticket duplicado, intento de modificar una incidencia ya resuelta o conflicto JPA.
