@@ -14,13 +14,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** API pública de incidencias; el microservicio incidents conserva la lógica CSR. */
+/**
+ * API pública de incidencias; el microservicio incidents conserva la lógica
+ * CSR.
+ */
 @RestController
 @RequestMapping("/api/incidents")
 public class IncidentBffController {
+
     private final IncidentClient client;
 
-    public IncidentBffController(IncidentClient client) { this.client = client; }
+    public IncidentBffController(IncidentClient client) {
+        this.client = client;
+    }
 
     @GetMapping
     public ResponseEntity<String> list(@RequestParam(required = false) Long parkingId,

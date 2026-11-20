@@ -15,6 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class ApiExceptionHandler {
 
     public record ApiError(String code, String message, String timestamp) {
+
     }
 
     @ExceptionHandler(ParkingNotFoundException.class)

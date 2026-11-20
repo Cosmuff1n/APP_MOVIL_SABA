@@ -13,9 +13,12 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
-/** HTTP hacia MS parking; nunca accede a su PostgreSQL directamente. */
+/**
+ * HTTP hacia MS parking; nunca accede a su PostgreSQL directamente.
+ */
 @Component
 public class ParkingClientImpl implements ParkingClient {
+
     private final RestClient client;
 
     @Autowired

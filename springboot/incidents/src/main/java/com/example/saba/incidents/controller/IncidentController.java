@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/incidents")
 public class IncidentController {
+
     private final IncidentService service;
 
     public IncidentController(IncidentService service) {
@@ -28,7 +29,7 @@ public class IncidentController {
 
     @GetMapping
     public List<IncidentDto> list(@RequestParam(required = false) Long parkingId,
-                                  @RequestParam(required = false) Long serviceId) {
+            @RequestParam(required = false) Long serviceId) {
         return service.list(parkingId, serviceId);
     }
 

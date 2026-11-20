@@ -10,10 +10,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 
-/** Conserva estado/cuerpo de errores upstream, y controla fallos de conectividad. */
+/**
+ * Conserva estado/cuerpo de errores upstream, y controla fallos de
+ * conectividad.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    public record ApiError(String code, String message, String timestamp) { }
+
+    public record ApiError(String code, String message, String timestamp) {
+
+    }
 
     @ExceptionHandler(RestClientResponseException.class)
     public ResponseEntity<String> upstreamHttp(RestClientResponseException ex) {

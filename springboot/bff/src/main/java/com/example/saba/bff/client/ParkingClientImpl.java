@@ -11,9 +11,12 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Delega en parking mediante REST; nunca accede a su PostgreSQL. */
+/**
+ * Delega en parking mediante REST; nunca accede a su PostgreSQL.
+ */
 @Component
 public class ParkingClientImpl implements ParkingClient {
+
     private final RestClient client;
 
     @Autowired
@@ -26,7 +29,9 @@ public class ParkingClientImpl implements ParkingClient {
     }
 
     // Constructor para pruebas con servidor HTTP simulado.
-    ParkingClientImpl(RestClient client) { this.client = client; }
+    ParkingClientImpl(RestClient client) {
+        this.client = client;
+    }
 
     @Override
     public ResponseEntity<String> list(String authorization) {

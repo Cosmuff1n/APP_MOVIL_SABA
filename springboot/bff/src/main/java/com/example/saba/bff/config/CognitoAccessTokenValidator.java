@@ -5,8 +5,11 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-/** Solo se admiten access tokens del cliente Cognito público configurado. */
+/**
+ * Solo se admiten access tokens del cliente Cognito público configurado.
+ */
 public final class CognitoAccessTokenValidator implements OAuth2TokenValidator<Jwt> {
+
     private final String expectedClientId;
 
     public CognitoAccessTokenValidator(String expectedClientId) {

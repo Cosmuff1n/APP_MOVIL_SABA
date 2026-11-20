@@ -8,10 +8,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
-/** Una fila de PostgreSQL; no es IncidentEntity.kt de Room. */
+/**
+ * Una fila de PostgreSQL; no es IncidentEntity.kt de Room.
+ */
 @Entity
 @Table(name = "incidents")
 public class IncidentEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -56,11 +59,12 @@ public class IncidentEntity {
     @Column(name = "revision", nullable = false)
     private Long revision;
 
-    protected IncidentEntity() { }
+    protected IncidentEntity() {
+    }
 
     public IncidentEntity(String ticketCode, Long parkingId, Long serviceId,
-                          String reporterName, String failureType, String description,
-                          String status, long reportedAt) {
+            String reporterName, String failureType, String description,
+            String status, long reportedAt) {
         this.ticketCode = ticketCode;
         this.parkingId = parkingId;
         this.serviceId = serviceId;
@@ -71,24 +75,74 @@ public class IncidentEntity {
         this.reportedAt = reportedAt;
     }
 
-    public Long getId() { return id; }
-    public String getTicketCode() { return ticketCode; }
-    public Long getParkingId() { return parkingId; }
-    public Long getServiceId() { return serviceId; }
-    public String getReporterName() { return reporterName; }
-    public String getFailureType() { return failureType; }
-    public String getDescription() { return description; }
-    public String getStatus() { return status; }
-    public Long getReportedAt() { return reportedAt; }
-    public boolean isResolved() { return resolved; }
-    public String getResolvedByName() { return resolvedByName; }
-    public String getResolutionDescription() { return resolutionDescription; }
-    public Long getResolvedAt() { return resolvedAt; }
-    public Long getRevision() { return revision; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setFailureType(String failureType) { this.failureType = failureType; }
-    public void setDescription(String description) { this.description = description; }
-    public void setStatus(String status) { this.status = status; }
+    public String getTicketCode() {
+        return ticketCode;
+    }
+
+    public Long getParkingId() {
+        return parkingId;
+    }
+
+    public Long getServiceId() {
+        return serviceId;
+    }
+
+    public String getReporterName() {
+        return reporterName;
+    }
+
+    public String getFailureType() {
+        return failureType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public Long getReportedAt() {
+        return reportedAt;
+    }
+
+    public boolean isResolved() {
+        return resolved;
+    }
+
+    public String getResolvedByName() {
+        return resolvedByName;
+    }
+
+    public String getResolutionDescription() {
+        return resolutionDescription;
+    }
+
+    public Long getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public Long getRevision() {
+        return revision;
+    }
+
+    public void setFailureType(String failureType) {
+        this.failureType = failureType;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public void resolve(String byName, String resolution, long when) {
         this.resolved = true;
         this.resolvedByName = byName;

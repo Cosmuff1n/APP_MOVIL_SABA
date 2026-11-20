@@ -16,6 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
@@ -31,8 +32,10 @@ public class SecurityConfig {
             @Value("${saba.security.cognito.client-id:}") String clientId) {
         // Fail closed: ni anónimo ni bypass de JWT cuando falta la configuración.
         if (issuerUri == null || issuerUri.isBlank()) {
-            return token -> { throw new BadJwtException(
-                    "Configure COGNITO_ISSUER_URI para acceder a la API del BFF"); };
+            return token -> {
+                throw new BadJwtException(
+                        "Configure COGNITO_ISSUER_URI para acceder a la API del BFF");
+            };
         }
         String issuer = issuerUri.replaceAll("/+$", "");
         NimbusJwtDecoder decoder = NimbusJwtDecoder

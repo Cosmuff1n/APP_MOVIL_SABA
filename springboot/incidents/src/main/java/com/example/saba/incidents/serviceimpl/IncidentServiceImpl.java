@@ -14,10 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Lógica de negocio: no contiene código de HTTP ni acceso SQL directo. */
+/**
+ * Lógica de negocio: no contiene código de HTTP ni acceso SQL directo.
+ */
 @Service
 @Transactional
 public class IncidentServiceImpl implements IncidentService {
+
     private final IncidentRepository repository;
     private final ParkingClient parkingClient;
     private final Clock clock;
@@ -117,7 +120,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private IncidentEntity find(long id) {
-        if (id <= 0) throw new InvalidIncidentException("id debe ser positivo");
+        if (id <= 0) {
+            throw new InvalidIncidentException("id debe ser positivo");
+        }
         return repository.findById(id).orElseThrow(() -> new IncidentNotFoundException(id));
     }
 
@@ -133,7 +138,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private static String optionalText(String text, String name, int maximum) {
-        if (text == null) return "";
+        if (text == null) {
+            return "";
+        }
         String trimmed = text.trim();
         if (trimmed.length() > maximum) {
             throw new InvalidIncidentException(name + " supera " + maximum + " caracteres");

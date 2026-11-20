@@ -10,9 +10,12 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Delega en incidents mediante REST; no consulta su PostgreSQL. */
+/**
+ * Delega en incidents mediante REST; no consulta su PostgreSQL.
+ */
 @Component
 public class IncidentClientImpl implements IncidentClient {
+
     private final RestClient client;
 
     @Autowired
@@ -23,16 +26,22 @@ public class IncidentClientImpl implements IncidentClient {
         this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
     }
 
-    IncidentClientImpl(RestClient client) { this.client = client; }
+    IncidentClientImpl(RestClient client) {
+        this.client = client;
+    }
 
     @Override
     public ResponseEntity<String> list(Long parkingId, Long serviceId, String authorization) {
         return client.get().uri(builder -> {
-                    builder.path("/api/incidents");
-                    if (parkingId != null) builder.queryParam("parkingId", parkingId);
-                    if (serviceId != null) builder.queryParam("serviceId", serviceId);
-                    return builder.build();
-                })
+            builder.path("/api/incidents");
+            if (parkingId != null) {
+                builder.queryParam("parkingId", parkingId);
+            }
+            if (serviceId != null) {
+                builder.queryParam("serviceId", serviceId);
+            }
+            return builder.build();
+        })
                 .header(HttpHeaders.AUTHORIZATION, authorization)
                 .retrieve().toEntity(String.class);
     }

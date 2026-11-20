@@ -14,13 +14,19 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** API pública de parking; la persistencia y validación de negocio siguen en parking. */
+/**
+ * API pública de parking; la persistencia y validación de negocio siguen en
+ * parking.
+ */
 @RestController
 @RequestMapping("/api/parking")
 public class ParkingBffController {
+
     private final ParkingClient client;
 
-    public ParkingBffController(ParkingClient client) { this.client = client; }
+    public ParkingBffController(ParkingClient client) {
+        this.client = client;
+    }
 
     @GetMapping
     public ResponseEntity<String> list(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {

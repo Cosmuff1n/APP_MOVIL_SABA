@@ -5,8 +5,11 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-/** Evita aceptar un ID token en lugar del access token de Cognito. */
+/**
+ * Evita aceptar un ID token en lugar del access token de Cognito.
+ */
 public final class CognitoAccessTokenValidator implements OAuth2TokenValidator<Jwt> {
+
     private final String expectedClientId;
 
     public CognitoAccessTokenValidator(String expectedClientId) {
