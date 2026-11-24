@@ -23,6 +23,8 @@ abstract class RepositoryModule {
     @Binds
     abstract fun bindParkingRemoteDataSource(impl: ParkingRemoteDataSourceImpl): ParkingRemoteDataSource
     @Binds
+    abstract fun bindIncidentRemoteDataSource(impl: IncidentRemoteDataSourceImpl): IncidentRemoteDataSource
+    @Binds
     abstract fun bindParkingRepository(impl: ParkingRepositoryImpl): ParkingRepository
     @Binds
     abstract fun bindServiceRepository(impl: ServiceRepositoryImpl): ServiceRepository

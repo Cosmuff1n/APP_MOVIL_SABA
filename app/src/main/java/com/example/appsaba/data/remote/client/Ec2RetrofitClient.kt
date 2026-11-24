@@ -7,10 +7,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/** Cliente dedicado al EC2 de Saba. No cambia el Retrofit del login existente. */
+/** Cliente Retrofit del BFF; el API de login conserva su propia configuración. */
 object Ec2RetrofitClient {
     val api: Ec2ParkingApiService by lazy {
-        val baseUrl = BuildConfig.EC2_API_BASE_URL.trim().let {
+        val baseUrl = BuildConfig.BFF_API_BASE_URL.trim().let {
             if (it.endsWith("/")) it else "$it/"
         }
         val client = OkHttpClient.Builder()

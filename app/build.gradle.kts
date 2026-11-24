@@ -38,11 +38,15 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.appsaba"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
-        // Servicio EC2 independiente del login (no modificar API_BASE_URL).
-        val ec2ApiBaseUrl = envProps.getProperty("EC2_API_BASE_URL")
-            ?: System.getenv("EC2_API_BASE_URL")
-            ?: "http://34.203.14.129/"
-        buildConfigField("String", "EC2_API_BASE_URL", "\"$ec2ApiBaseUrl\"")
+        // BFF independiente del API de login. 10.0.2.2 = host del emulador Android.
+        // En Samsung real configurar BFF_API_BASE_URL con la IP LAN del PC.
+        val bffApiBaseUrl = (envProps.getProperty("BFF_API_BASE_URL")
+            ?: System.getenv("BFF_API_BASE_URL")
+            ?: "http://10.0.2.2:8080/").trim()
+        require(bffApiBaseUrl.startsWith("http://") || bffApiBaseUrl.startsWith("https://")) {
+            "BFF_API_BASE_URL debe ser una URL HTTP(S)"
+        }
+        buildConfigField("String", "BFF_API_BASE_URL", "\"${bffApiBaseUrl.trimEnd('/')}/\"")
 
         val cognitoDefaults = mapOf(
             "COGNITO_ISSUER" to "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_REEMPLAZAR",
@@ -123,8 +127,4 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(platform(libs.androidx.compose.bom))
 
-}
-
-tasks.register("prepareKotlinBuildScriptModel") {
-    // Placeholder task for IDE script model sync
 }

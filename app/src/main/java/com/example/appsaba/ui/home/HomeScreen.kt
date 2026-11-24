@@ -322,7 +322,7 @@ private fun AmazonExtra(accessToken: String?) {
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    "Amazon EC2 · Retrofit",
+                    "BFF · Retrofit",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

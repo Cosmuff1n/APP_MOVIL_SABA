@@ -1,6 +1,7 @@
 package com.example.appsaba.domain.repository
 
 import com.example.appsaba.domain.model.Incident
+import com.example.appsaba.domain.model.RemoteIncident
 import kotlinx.coroutines.flow.Flow
 
 interface IncidentRepository {
@@ -12,4 +13,12 @@ interface IncidentRepository {
     suspend fun insert(incident: Incident): Long
     suspend fun update(incident: Incident): Int
     suspend fun delete(incident: Incident): Int
+
+    // Identidad remota independiente de Room; requiere Cognito Access Token.
+    suspend fun listRemote(token: String): List<RemoteIncident>
+    suspend fun createRemote(token: String, parkingId: Long, serviceId: Long,
+                             reporterName: String, failureType: String,
+                             description: String, status: String): RemoteIncident
+    suspend fun resolveRemote(token: String, incident: RemoteIncident,
+                              resolvedByName: String, resolutionDescription: String): RemoteIncident
 }

@@ -22,20 +22,20 @@ fun Ec2ParkingsSection(accessToken: String?) {
 
     Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("EC2 + Room (cache integrada)", style = MaterialTheme.typography.titleMedium)
+        Text("BFF + Room (cache integrada)", style = MaterialTheme.typography.titleMedium)
         Text(state.remoteFeedback, style = MaterialTheme.typography.bodySmall)
         if (accessToken.isNullOrBlank()) {
             Text("Para operaciones remotas entra con Cognito. Room local sigue disponible.")
         } else {
-            OutlinedButton(enabled = !busy, onClick = model::refreshRemote) { Text("Actualizar desde EC2") }
+            OutlinedButton(enabled = !busy, onClick = model::refreshRemote) { Text("Actualizar desde BFF") }
             OutlinedTextField(value = name, onValueChange = { name = it },
-                label = { Text(if (editingId == null) "Nuevo estacionamiento EC2" else "Nuevo nombre") },
+                label = { Text(if (editingId == null) "Nuevo estacionamiento BFF" else "Nuevo nombre") },
                 modifier = Modifier.fillMaxWidth())
             Button(enabled = !busy && name.isNotBlank(), onClick = {
                 val row = cached.firstOrNull { it.id == editingId }
                 if (row == null) model.createRemote(name) else model.renameRemote(row, name)
                 name = ""; editingId = null
-            }) { Text(if (editingId == null) "Crear en EC2" else "Guardar nombre en EC2") }
+            }) { Text(if (editingId == null) "Crear en BFF" else "Guardar nombre en BFF") }
         }
         if (cached.isEmpty()) Text("Sin estacionamientos remotos en cache")
         cached.forEach { parking ->
@@ -50,7 +50,7 @@ fun Ec2ParkingsSection(accessToken: String?) {
                 }
                 if (pendingDeleteId == parking.id) {
                     Row {
-                        Text("¿Eliminar en EC2?")
+                        Text("¿Eliminar en BFF?")
                         TextButton(enabled = !busy, onClick = {
                             pendingDeleteId = null; model.deleteRemote(parking)
                         }) { Text("Confirmar") }

@@ -80,7 +80,7 @@ fun AppNavigation(accessToken: String, cognitoAccessToken: String? = null, onLog
                     onReportIncident = { currentSection = MainSection.INCIDENTS }
                 )
                 // Pantalla visual del compañero + CRUD original de Room.
-                MainSection.INCIDENTS -> IncidentScreen()
+                MainSection.INCIDENTS -> IncidentScreen(cognitoAccessToken = cognitoAccessToken)
                 MainSection.GUIDES -> GuidesScreen()
                 MainSection.MAINTENANCE -> MaintenanceScreen(
                     onManageEquipment = { dataInitialTab = 1; currentSection = MainSection.ALL_DATA }

@@ -11,7 +11,7 @@ import com.example.appsaba.data.mapper.toCachedEntity
 import javax.inject.Inject
 import kotlinx.coroutines.flow.map
 
-/** Un solo repositorio para datos locales y cache de parkings EC2. */
+/** Un solo repositorio para datos locales y cache de parkings remotos del BFF. */
 class ParkingRepositoryImpl @Inject constructor(
     private val source: ParkingLocalDataSource,
     private val remote: ParkingRemoteDataSource

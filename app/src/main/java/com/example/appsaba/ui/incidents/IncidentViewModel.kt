@@ -7,9 +7,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.CancellationException
+import retrofit2.HttpException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.appsaba.domain.model.Incident
+import com.example.appsaba.domain.model.RemoteIncident
 import com.example.appsaba.domain.repository.IncidentRepository
 import com.example.appsaba.domain.repository.ParkingRepository
 import com.example.appsaba.domain.repository.ServiceRepository
@@ -30,6 +33,9 @@ class IncidentViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : CommonViewModel() {
     private val selected = MutableStateFlow<Long?>(null)
+    private var remoteToken: String? = null
+    private val _remoteState = MutableStateFlow(RemoteIncidentUiState())
+    val remoteState: StateFlow<RemoteIncidentUiState> = _remoteState.asStateFlow()
     private val reportVisible = MutableStateFlow(false)
     private val serviceFlow = selected.flatMapLatest { id ->
         if (id == null) flowOf(emptyList()) else services.observeByParking(id)
@@ -52,6 +58,72 @@ class IncidentViewModel @Inject constructor(
             ticketList.filter { it.parkingId == parkingId },
             shown, action.busy, action.feedback)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IncidentUiState())
+
+    fun setRemoteToken(token: String?) {
+        val normalized = token?.takeIf { it.isNotBlank() }
+        if (normalized == remoteToken) return
+        remoteToken = normalized
+        _remoteState.value = RemoteIncidentUiState()
+        if (normalized != null) refreshRemote()
+    }
+
+    private fun remoteAction(operation: suspend (String) -> Unit) {
+        val token = remoteToken ?: return
+        if (_remoteState.value.busy) return
+        _remoteState.value = _remoteState.value.copy(busy = true, feedback = "Consultando BFF...")
+        viewModelScope.launch {
+            try {
+                operation(token)
+                if (remoteToken == token) {
+                    _remoteState.value = _remoteState.value.copy(feedback = "Sincronizado con BFF")
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: HttpException) {
+                if (remoteToken == token) _remoteState.value = _remoteState.value.copy(
+                    feedback = "BFF: HTTP ${error.code()} (se mantienen las incidencias locales)"
+                )
+            } catch (error: Exception) {
+                if (remoteToken == token) _remoteState.value = _remoteState.value.copy(
+                    feedback = "BFF no disponible: ${error.localizedMessage}"
+                )
+            } finally {
+                if (remoteToken == token) _remoteState.value = _remoteState.value.copy(busy = false)
+            }
+        }
+    }
+
+    private suspend fun reloadRemote(token: String) {
+        val data = repository.listRemote(token)
+        if (remoteToken == token) _remoteState.value = _remoteState.value.copy(incidents = data)
+    }
+
+    fun refreshRemote() = remoteAction { reloadRemote(it) }
+
+    fun createRemote(parkingId: Long?, serviceId: Long?, reporter: String,
+                     failure: String, description: String, severity: String) {
+        if (parkingId == null || parkingId <= 0 || serviceId == null || serviceId <= 0 ||
+            failure.isBlank() || failure.length > 120 || description.isBlank() || description.length > 240 ||
+            severity !in setOf("degradado", "fuera-servicio")) {
+            _remoteState.value = _remoteState.value.copy(feedback = "Revisa IDs remotos, falla y descripción")
+            return
+        }
+        remoteAction { token ->
+            repository.createRemote(token, parkingId, serviceId, reporter, failure, description, severity)
+            reloadRemote(token)
+        }
+    }
+
+    fun resolveRemote(incident: RemoteIncident, resolver: String, solution: String) {
+        if (resolver.isBlank() || solution.isBlank() || solution.length > 300) {
+            _remoteState.value = _remoteState.value.copy(feedback = "Indica quién resolvió y la solución (máx. 300)")
+            return
+        }
+        remoteAction { token ->
+            repository.resolveRemote(token, incident, resolver, solution)
+            reloadRemote(token)
+        }
+    }
 
     fun selectParking(id: Long?) { selected.value = id }
     fun openSheet() { reportVisible.value = true }

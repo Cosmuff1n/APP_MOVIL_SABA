@@ -75,21 +75,21 @@ class HomeViewModel @Inject constructor(
 
     private fun remoteAction(token: String?, operation: suspend (String) -> Unit) {
         if (token.isNullOrBlank() || _uiState.value.remoteBusy) return
-        _uiState.update { it.copy(remoteBusy = true, remoteFeedback = "Conectando con EC2...") }
+        _uiState.update { it.copy(remoteBusy = true, remoteFeedback = "Conectando con BFF...") }
         viewModelScope.launch {
             try {
                 operation(token)
-                _uiState.update { it.copy(remoteFeedback = "Sincronizacion correcta con EC2") }
+                _uiState.update { it.copy(remoteFeedback = "Sincronizacion correcta con BFF") }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (error: HttpException) {
                 val msg = when (error.code()) {
                     401 -> "Sesion Cognito caducada. Cierra sesion e ingresa otra vez."
                     409 -> "Conflicto de revision: actualiza antes de editar."
-                    else -> "HTTP ${error.code()} al conectar con EC2"
+                    else -> "HTTP ${error.code()} al conectar con BFF"
                 }
                 _uiState.update { it.copy(remoteFeedback = msg) }
             } catch (error: Exception) {
-                _uiState.update { it.copy(remoteFeedback = "EC2 no disponible. Cache Room conservada: ${error.localizedMessage}") }
+                _uiState.update { it.copy(remoteFeedback = "BFF no disponible. Cache Room conservada: ${error.localizedMessage}") }
             } finally {
                 _uiState.update { it.copy(remoteBusy = false) }
             }

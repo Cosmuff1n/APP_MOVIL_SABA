@@ -1,5 +1,7 @@
 package com.example.appsaba.ui.incidents
 
+import com.example.appsaba.BuildConfig
+
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -80,10 +82,11 @@ internal val SuccessBg = Color(0xFFE6F6EF)
 // Pantalla: el diseño de tu compañero queda intacto; los datos y las acciones
 // provienen de IncidentViewModel y la interfaz IncidentRepository (Room).
 @Composable
-fun IncidentScreen() {
+fun IncidentScreen(cognitoAccessToken: String? = null) {
     val context = LocalContext.current
     val model: IncidentViewModel = viewModel()
     val uiState by model.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(cognitoAccessToken) { model.setRemoteToken(cognitoAccessToken) }
     val parkings = uiState.parkings
     val selectedId = uiState.selectedParkingId
     val allServices = uiState.services
@@ -154,7 +157,8 @@ fun IncidentScreen() {
             incidents.firstOrNull { it.id.toString() == ticket.id }?.let(model::deleteIncident)
         },
         busy = busy,
-        parkingName = selected?.name ?: "SIN ESTACIONAMIENTO"
+        parkingName = selected?.name ?: "SIN ESTACIONAMIENTO",
+        remoteSection = { if (BuildConfig.DEBUG) RemoteIncidentsSection(cognitoAccessToken, model) }
     )
 }
 
@@ -172,7 +176,8 @@ internal fun IncidentsContent(
     onResolveTicket: (Ticket, String, String) -> Unit = { _, _, _ -> },
     onDeleteTicket: (Ticket) -> Unit = {},
     busy: Boolean = false,
-    parkingName: String = "PARKING PLAZA ITALIA"
+    parkingName: String = "PARKING PLAZA ITALIA",
+    remoteSection: @Composable () -> Unit = {}
 ) {
     val activos = tickets.count { it.activo }
 
@@ -184,6 +189,7 @@ internal fun IncidentsContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { IncidentsHeader(parkingName) }
+        item { remoteSection() }
         if (parkings.size > 1) {
             item {
                 Row(

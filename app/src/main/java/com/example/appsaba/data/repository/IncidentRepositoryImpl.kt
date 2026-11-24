@@ -1,6 +1,11 @@
 package com.example.appsaba.data.repository
 
 import com.example.appsaba.domain.model.Incident
+import com.example.appsaba.domain.model.RemoteIncident
+import com.example.appsaba.data.remote.datasource.IncidentRemoteDataSource
+import com.example.appsaba.data.remote.dto.BffIncidentDto
+import com.example.appsaba.data.mapper.toRemoteDomain
+import java.util.UUID
 import com.example.appsaba.domain.repository.IncidentRepository
 import com.example.appsaba.domain.repository.ServiceRepository
 import com.example.appsaba.data.local.datasource.IncidentLocalDataSource
@@ -12,7 +17,8 @@ import kotlinx.coroutines.flow.map
 
 class IncidentRepositoryImpl @Inject constructor(
     private val source: IncidentLocalDataSource,
-    private val services: ServiceRepository
+    private val services: ServiceRepository,
+    private val remote: IncidentRemoteDataSource
 ) : IncidentRepository {
     override fun observeByParking(parkingId: Long) = source.observeByParking(parkingId).map { it.map(IncidentEntity::toDomain) }
     override fun observeActiveByParking(parkingId: Long) = source.observeActiveByParking(parkingId).map { it.map(IncidentEntity::toDomain) }
@@ -28,6 +34,41 @@ class IncidentRepositoryImpl @Inject constructor(
         return source.update(incident.toEntity())
     }
     override suspend fun delete(incident: Incident) = source.delete(incident.toEntity())
+    override suspend fun listRemote(token: String): List<RemoteIncident> =
+        remote.list(token).map { it.toRemoteDomain() }
+
+    override suspend fun createRemote(token: String, parkingId: Long, serviceId: Long,
+                                      reporterName: String, failureType: String,
+                                      description: String, status: String): RemoteIncident {
+        // parkingId es el ID positivo REMOTO que asigna Spring, nunca Parking.id de SQLite.
+        require(parkingId > 0 && serviceId > 0) { "Usa IDs remotos positivos para parking y service" }
+        require(failureType.isNotBlank() && description.isNotBlank()) { "Falla y descripción obligatorias" }
+        require(description.length <= 240 && failureType.length <= 120) { "Texto demasiado largo" }
+        require(status == "degradado" || status == "fuera-servicio") { "Estado remoto inválido" }
+        val request = BffIncidentDto(
+            ticketCode = "SABA-${UUID.randomUUID().toString().take(8).uppercase()}",
+            parkingId = parkingId, serviceId = serviceId, reporterName = reporterName.trim(),
+            failureType = failureType.trim(), description = description.trim(), status = status
+        )
+        return remote.create(token, request).toRemoteDomain()
+    }
+
+    override suspend fun resolveRemote(token: String, incident: RemoteIncident,
+                                       resolvedByName: String, resolutionDescription: String): RemoteIncident {
+        require(!incident.isResolved) { "La incidencia ya está resuelta" }
+        require(resolvedByName.isNotBlank() && resolutionDescription.isNotBlank()) { "Completa la resolución" }
+        // PUT del backend exige failureType, description, status e isResolved.
+        val request = BffIncidentDto(
+            failureType = incident.failureType,
+            description = incident.description,
+            status = incident.status,
+            isResolved = true,
+            resolvedByName = resolvedByName.trim(),
+            resolutionDescription = resolutionDescription.trim()
+        )
+        return remote.update(token, incident.id, request).toRemoteDomain()
+    }
+
     private suspend fun validateService(incident: Incident) {
         val service = services.getById(incident.serviceId)
             ?: throw IllegalArgumentException("No existe el equipo con id ${incident.serviceId}")

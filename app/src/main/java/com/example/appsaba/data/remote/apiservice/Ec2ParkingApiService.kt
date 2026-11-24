@@ -12,23 +12,23 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface Ec2ParkingApiService {
-    @GET("api/parkings")
+    @GET("api/parking")
     suspend fun getParkings(@Header("Authorization") authorization: String): List<Ec2ParkingDto>
 
-    @POST("api/parkings")
+    @POST("api/parking")
     suspend fun createParking(
         @Header("Authorization") authorization: String,
         @Body body: Ec2ParkingCreateDto
     ): Ec2ParkingDto
 
-    @PATCH("api/parkings/{id}")
+    @PATCH("api/parking/{id}")
     suspend fun patchParking(
         @Header("Authorization") authorization: String,
         @Path("id") id: Long,
         @Body body: Ec2ParkingPatchDto
     ): Ec2ParkingDto
 
-    @DELETE("api/parkings/{id}")
+    @DELETE("api/parking/{id}")
     suspend fun deleteParking(
         @Header("Authorization") authorization: String,
         @Header("If-Match") revision: String,

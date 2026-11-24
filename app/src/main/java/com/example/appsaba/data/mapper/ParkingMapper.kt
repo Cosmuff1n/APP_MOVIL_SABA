@@ -4,7 +4,7 @@ import com.example.appsaba.domain.model.Parking
 import com.example.appsaba.data.local.entity.ParkingEntity
 import com.example.appsaba.data.remote.dto.Ec2ParkingDto
 
-/** Mapeos entre modelos de negocio, fila Room y respuesta de EC2. */
+/** Mapeos entre modelos de negocio, fila Room y respuesta del BFF. */
 fun ParkingEntity.toDomain(): Parking = Parking(
     id, name, address, commune, totalSpaces, freeSpaces, isActive,
     remoteId, revision, remoteUpdatedAt, lastSyncedAt
