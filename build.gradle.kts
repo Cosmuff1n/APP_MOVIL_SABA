@@ -145,7 +145,3 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
 
 }
-
-tasks.register("prepareKotlinBuildScriptModel") {
-    // Placeholder task for IDE script model sync
-}
