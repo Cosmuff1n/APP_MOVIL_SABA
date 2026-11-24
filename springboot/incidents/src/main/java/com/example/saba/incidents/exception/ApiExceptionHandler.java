@@ -14,7 +14,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    public record ApiError(String code, String message, String timestamp) { }
+
+    public record ApiError(String code, String message, String timestamp) {
+
+    }
 
     @ExceptionHandler(IncidentNotFoundException.class)
     public ResponseEntity<ApiError> notFound(IncidentNotFoundException ex) {
@@ -27,7 +30,7 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler({IncidentConflictException.class, OptimisticLockingFailureException.class,
-            DataIntegrityViolationException.class})
+        DataIntegrityViolationException.class})
     public ResponseEntity<ApiError> conflict(Exception ex) {
         return response(HttpStatus.CONFLICT, "INCIDENT_CONFLICT",
                 "Conflicto de registro o revisión; consulte la incidencia antes de reintentar");
@@ -47,7 +50,7 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
+        MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
     public ResponseEntity<ApiError> invalidRequest(Exception ex) {
         return response(HttpStatus.BAD_REQUEST, "INVALID_REQUEST",
                 "Cuerpo, ruta o encabezado no válido");

@@ -1,8 +1,7 @@
 package com.example.saba.incidents.serviceimpl;
 
 import com.example.saba.incidents.client.ParkingClient;
-import com.example.saba.incidents.dto.IncidentCreateDto;
-import com.example.saba.incidents.dto.IncidentUpdateDto;
+import com.example.saba.incidents.dto.IncidentDto;
 import com.example.saba.incidents.exception.IncidentConflictException;
 import com.example.saba.incidents.exception.InvalidIncidentException;
 import com.example.saba.incidents.model.IncidentEntity;
@@ -30,9 +29,21 @@ class IncidentServiceImplTest {
         when(repository.saveAndFlush(any(IncidentEntity.class))).thenAnswer(i -> i.getArgument(0));
     }
 
-    private IncidentCreateDto valid() {
-        return new IncidentCreateDto("SABA-A1234567", 15L, 3L, "Operador A", "Barrera",
-                "La barrera de entrada no responde", "fuera-servicio", null, null, null);
+    private IncidentDto valid() {
+        return createRequest("SABA-A1234567", 15L, 3L, "Operador A", "Barrera",
+                "La barrera de entrada no responde", "fuera-servicio");
+    }
+
+    private static IncidentDto createRequest(String code, Long parkingId, Long serviceId,
+             String reporter, String failure, String description, String status) {
+        return new IncidentDto(null, code, parkingId, serviceId, reporter, failure,
+                description, status, null, null, null, null, null);
+    }
+
+    private static IncidentDto updateRequest(String failure, String description, String status,
+             Boolean resolved, String by, String resolution) {
+        return new IncidentDto(null, null, null, null, null, failure, description,
+                status, null, resolved, by, resolution, null);
     }
 
     private IncidentEntity existing() {
@@ -56,9 +67,9 @@ class IncidentServiceImplTest {
         verifyNoInteractions(parking);
     }
 
-    @Test void rejectsLocalEvidenceInsteadOfPretendingItWasUploaded() {
-        var request = new IncidentCreateDto("SABA-A1234567", 15L, 3L, "A",
-                "Barrera", "Falla", "degradado", "file:///data/photo.jpg", null, null);
+    @Test void rejectsServerManagedFieldsInCreate() {
+        var request = new IncidentDto(999L, "SABA-A1234567", 15L, 3L, "A",
+                "Barrera", "Falla", "degradado", null, null, null, null, null);
         assertThrows(InvalidIncidentException.class,
                 () -> service.create(request, "Bearer token"));
         verifyNoInteractions(parking);
@@ -67,7 +78,7 @@ class IncidentServiceImplTest {
     @Test void resolvesIncidentWithServerTimestamp() {
         var entity = existing();
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
-        var request = new IncidentUpdateDto("Barrera", "Reemplazo de sensor", "fuera-servicio",
+        var request = updateRequest("Barrera", "Reemplazo de sensor", "fuera-servicio",
                 true, "Técnico", "Se reemplazó el sensor");
         var result = service.update(1L, request);
         assertTrue(result.isResolved());
@@ -81,14 +92,27 @@ class IncidentServiceImplTest {
         entity.resolve("Técnico", "Solucionado", 1_680_000_000_000L);
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         assertThrows(IncidentConflictException.class, () -> service.update(1L,
-                new IncidentUpdateDto("Barrera", "Falla", "degradado", false, null, null)));
+                updateRequest("Barrera", "Falla", "degradado", false, null, null)));
         verify(repository, never()).saveAndFlush(any());
     }
 
     @Test void cannotAssociateRemoteIdZero() {
-        var input = new IncidentCreateDto("SABA-A1234567", 0L, 3L, "A",
-                "Falla", "Problema", "degradado", null, null, null);
+        var input = createRequest("SABA-A1234567", 0L, 3L, "A",
+                "Falla", "Problema", "degradado");
         assertThrows(InvalidIncidentException.class, () -> service.create(input, "Bearer token"));
+    }
+
+    @Test void updateRejectsIdentityChange() {
+        var req = createRequest("SABA-OTRO", 15L, 3L, "A", "Barrera", "Falla", "degradado");
+        assertThrows(InvalidIncidentException.class, () -> service.update(1L, req));
+        verify(repository, never()).findById(anyLong());
+    }
+
+    @Test void putRequiresResolvedValue() {
+        var entity = existing();
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        assertThrows(InvalidIncidentException.class, () -> service.update(1L,
+                updateRequest("Barrera", "Falla", "degradado", null, null, null)));
     }
 
     @Test void listUsesRemoteParkingFilter() {

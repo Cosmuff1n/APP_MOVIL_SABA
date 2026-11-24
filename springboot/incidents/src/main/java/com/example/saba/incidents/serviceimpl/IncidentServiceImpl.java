@@ -1,9 +1,7 @@
 package com.example.saba.incidents.serviceimpl;
 
 import com.example.saba.incidents.client.ParkingClient;
-import com.example.saba.incidents.dto.IncidentCreateDto;
 import com.example.saba.incidents.dto.IncidentDto;
-import com.example.saba.incidents.dto.IncidentUpdateDto;
 import com.example.saba.incidents.exception.IncidentConflictException;
 import com.example.saba.incidents.exception.IncidentNotFoundException;
 import com.example.saba.incidents.exception.InvalidIncidentException;
@@ -16,10 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Lógica de negocio: no contiene código de HTTP ni acceso SQL directo. */
+/**
+ * Lógica de negocio: no contiene código de HTTP ni acceso SQL directo.
+ */
 @Service
 @Transactional
 public class IncidentServiceImpl implements IncidentService {
+
     private final IncidentRepository repository;
     private final ParkingClient parkingClient;
     private final Clock clock;
@@ -62,8 +63,12 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public IncidentDto create(IncidentCreateDto request, String authorizationHeader) {
-        rejectLocalEvidence(request.evidenceUri(), request.evidenceFileName(), request.evidenceMimeType());
+    public IncidentDto create(IncidentDto request, String authorizationHeader) {
+        if (request.id() != null || request.reportedAt() != null || request.resolvedAt() != null
+                || Boolean.TRUE.equals(request.isResolved())
+                || request.resolvedByName() != null || request.resolutionDescription() != null) {
+            throw new InvalidIncidentException("Campos de identidad, fecha y resolución no admitidos en POST");
+        }
         String code = requiredText(request.ticketCode(), "ticketCode", 60);
         String failure = requiredText(request.failureType(), "failureType", 120);
         String description = requiredText(request.description(), "description", 240);
@@ -85,7 +90,12 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public IncidentDto update(long id, IncidentUpdateDto request) {
+    public IncidentDto update(long id, IncidentDto request) {
+        if (request.id() != null || request.ticketCode() != null || request.parkingId() != null
+                || request.serviceId() != null || request.reporterName() != null
+                || request.reportedAt() != null || request.resolvedAt() != null) {
+            throw new InvalidIncidentException("PUT no permite modificar identidad, vínculos ni fechas");
+        }
         IncidentEntity entity = find(id);
         if (entity.isResolved()) {
             throw new IncidentConflictException("La incidencia ya fue resuelta; no se permite reabrirla ni modificarla");
@@ -110,7 +120,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private IncidentEntity find(long id) {
-        if (id <= 0) throw new InvalidIncidentException("id debe ser positivo");
+        if (id <= 0) {
+            throw new InvalidIncidentException("id debe ser positivo");
+        }
         return repository.findById(id).orElseThrow(() -> new IncidentNotFoundException(id));
     }
 
@@ -126,7 +138,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private static String optionalText(String text, String name, int maximum) {
-        if (text == null) return "";
+        if (text == null) {
+            return "";
+        }
         String trimmed = text.trim();
         if (trimmed.length() > maximum) {
             throw new InvalidIncidentException(name + " supera " + maximum + " caracteres");
@@ -141,20 +155,10 @@ public class IncidentServiceImpl implements IncidentService {
         return state;
     }
 
-    private static void rejectLocalEvidence(String uri, String fileName, String mimeType) {
-        if (uri != null && !uri.isBlank() || fileName != null && !fileName.isBlank()
-                || mimeType != null && !mimeType.isBlank()) {
-            throw new InvalidIncidentException(
-                    "La subida de evidencias remotas no está implementada; no se aceptan URI locales ni metadatos sin archivo");
-        }
-    }
-
     private IncidentDto toDto(IncidentEntity e) {
         return new IncidentDto(e.getId(), e.getTicketCode(), e.getParkingId(), e.getServiceId(),
-                null, // reporterUserId local de Room no se interpreta como identidad global.
                 e.getReporterName(), e.getFailureType(), e.getDescription(), e.getStatus(),
-                e.getReportedAt(), null, null, null, // evidencia remota aún sin contrato.
-                e.isResolved(), null, // resolvedByUserId requiere un directorio remoto.
-                e.getResolvedByName(), e.getResolutionDescription(), e.getResolvedAt());
+                e.getReportedAt(), e.isResolved(), e.getResolvedByName(),
+                e.getResolutionDescription(), e.getResolvedAt());
     }
 }

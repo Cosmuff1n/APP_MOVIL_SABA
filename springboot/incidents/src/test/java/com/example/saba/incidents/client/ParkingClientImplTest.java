@@ -16,7 +16,7 @@ class ParkingClientImplTest {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
         var client = new ParkingClientImpl(builder.baseUrl("http://localhost:8081").build());
-        server.expect(requestTo("http://localhost:8081/api/parkings/15"))
+        server.expect(requestTo("http://localhost:8081/api/parking/15"))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("Authorization", "Bearer valid-token"))
                 .andRespond(withSuccess());
@@ -28,7 +28,7 @@ class ParkingClientImplTest {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
         var client = new ParkingClientImpl(builder.baseUrl("http://localhost:8081").build());
-        server.expect(requestTo("http://localhost:8081/api/parkings/99"))
+        server.expect(requestTo("http://localhost:8081/api/parking/99"))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
         assertThrows(InvalidIncidentException.class,
                 () -> client.assertExists(99L, "Bearer valid-token"));
@@ -39,7 +39,7 @@ class ParkingClientImplTest {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
         var client = new ParkingClientImpl(builder.baseUrl("http://localhost:8081").build());
-        server.expect(requestTo("http://localhost:8081/api/parkings/15"))
+        server.expect(requestTo("http://localhost:8081/api/parking/15"))
                 .andRespond(withServerError());
         assertThrows(DependencyUnavailableException.class,
                 () -> client.assertExists(15L, "Bearer valid-token"));

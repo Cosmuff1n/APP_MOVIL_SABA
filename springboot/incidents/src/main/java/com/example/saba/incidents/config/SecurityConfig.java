@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
@@ -34,8 +35,10 @@ public class SecurityConfig {
         // Arranca el servidor para diagnóstico, pero todas las solicitudes protegidas
         // seguirán rechazándose hasta configurar un User Pool real.
         if (issuerUri == null || issuerUri.isBlank()) {
-            return token -> { throw new BadJwtException(
-                    "Configure COGNITO_ISSUER_URI antes de consumir endpoints protegidos"); };
+            return token -> {
+                throw new BadJwtException(
+                        "Configure COGNITO_ISSUER_URI antes de consumir endpoints protegidos");
+            };
         }
         String issuer = issuerUri.replaceAll("/+$", "");
         NimbusJwtDecoder decoder = NimbusJwtDecoder

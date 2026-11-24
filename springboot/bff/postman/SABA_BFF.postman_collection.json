@@ -1,0 +1,350 @@
+{
+  "info": {
+    "name": "SABA BFF - API integración",
+    "description": "Pruebas HTTP BFF (Parking singular, Incidents plural). Pegar token solo en variable local de Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Parking (BFF)",
+      "item": [
+        {
+          "name": "GET todos Parking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bff_base_url}}/api/parking",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "parking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Parking por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bff_base_url}}/api/parking/{{parking_id}}",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "parking",
+                "{{parking_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST crear Parking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{bff_base_url}}/api/parking",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "parking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Parking Test SABA\",\n  \"address\": \"Av. Ejemplo 123\",\n  \"commune\": \"Santiago\",\n  \"totalSpaces\": 100,\n  \"freeSpaces\": 80,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH Parking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{bff_base_url}}/api/parking/{{parking_id}}",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "parking",
+                "{{parking_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"revision\": 0,\n  \"name\": \"Parking Actualizado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE Parking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "If-Match",
+                "value": "{{revision}}"
+              }
+            ],
+            "url": {
+              "raw": "{{bff_base_url}}/api/parking/{{parking_id}}",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "parking",
+                "{{parking_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incidents (BFF)",
+      "item": [
+        {
+          "name": "GET todas Incidencias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bff_base_url}}/api/incidents",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Incidencia por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bff_base_url}}/api/incidents/{{incident_id}}",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{incident_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST crear Incidencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{bff_base_url}}/api/incidents",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketCode\": \"SABA-TEST-001\",\n  \"parkingId\": 1,\n  \"serviceId\": 1,\n  \"reporterName\": \"Prueba\",\n  \"failureType\": \"Falla de barrera\",\n  \"description\": \"Barrera no responde\",\n  \"status\": \"degradado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT actualizar Incidencia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{bff_base_url}}/api/incidents/{{incident_id}}",
+              "host": [
+                "{{bff_base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{incident_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"failureType\": \"Falla de barrera\",\n  \"description\": \"En evaluación\",\n  \"status\": \"degradado\",\n  \"isResolved\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "bff_base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "parking_id",
+      "value": "1"
+    },
+    {
+      "key": "incident_id",
+      "value": "1"
+    },
+    {
+      "key": "revision",
+      "value": "0"
+    }
+  ]
+}

@@ -27,9 +27,8 @@ class IncidentControllerTest {
 
     private IncidentDto incident() {
         return new IncidentDto(9L, "SABA-12345678", 15L, 3L,
-                null, "Operador", "Barrera", "Falla mecánica", "degradado",
-                1_700_000_000_000L, null, null, null, false,
-                null, null, null, null);
+                "Operador", "Barrera", "Falla mecánica", "degradado",
+                1_700_000_000_000L, false, null, null, null);
     }
 
     @Test void listReturnsTheDocumentedFields() throws Exception {

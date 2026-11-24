@@ -1,8 +1,6 @@
 package com.example.saba.parking.service;
 
-import com.example.saba.parking.dto.ParkingCreateDto;
 import com.example.saba.parking.dto.ParkingDto;
-import com.example.saba.parking.dto.ParkingPatchDto;
 import java.util.List;
 
 /**
@@ -14,9 +12,9 @@ public interface ParkingService {
 
     ParkingDto getById(long id);
 
-    ParkingDto create(ParkingCreateDto request);
+    ParkingDto create(ParkingDto request);
 
-    ParkingDto patch(long id, ParkingPatchDto request);
+    ParkingDto patch(long id, ParkingDto request);
 
     void delete(long id, long expectedRevision);
 }

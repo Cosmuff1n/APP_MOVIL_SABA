@@ -29,7 +29,7 @@ class ParkingControllerTest {
     void listReturnsJsonCompatibleWithAndroid() throws Exception {
         when(service.list()).thenReturn(List.of(new ParkingDto(15L, "Centro", "Calle 1",
                 "Santiago", 120, 42, true, 2L, 1795000000000L, "Activo")));
-        mvc.perform(get("/api/parkings"))
+        mvc.perform(get("/api/parking"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].revision").value(2))
                 .andExpect(jsonPath("$[0].updatedAt").value(1795000000000L))
@@ -38,28 +38,31 @@ class ParkingControllerTest {
 
     @Test
     void createReturns201() throws Exception {
-        when(service.create(any())).thenReturn(new ParkingDto(1L, "A", "", "", 0, 0, true,
-                0L, 1000L, "Activo"));
-        mvc.perform(post("/api/parkings").contentType(MediaType.APPLICATION_JSON)
-                .content("{"name":"A
-        "}"))
+        when(service.create(any(ParkingDto.class)))
+                .thenReturn(new ParkingDto(1L, "A", "", "", 0, 0, true,
+                        0L, 1000L, "Activo"));
+        mvc.perform(post("/api/parking").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"A\"}"))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/parkings/1"));
+                .andExpect(header().string("Location", "/api/parking/1"));
+        verify(service).create(any(ParkingDto.class));
     }
 
     @Test
     void patchUsesPatchNotPut() throws Exception {
-        when(service.patch(eq(1L), any())).thenReturn(new ParkingDto(1L, "Nuevo", "", "",
-                0, 0, true, 1L, 1000L, "Activo"));
-        mvc.perform(patch("/api/parkings/1").contentType(MediaType.APPLICATION_JSON)
-                .content("{"revision":0,"name":"Nuevo
-        "}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Nuevo"));
+        when(service.patch(eq(1L), any(ParkingDto.class)))
+                .thenReturn(new ParkingDto(1L, "Nuevo", "", "", 0, 0,
+                        true, 1L, 1000L, "Activo"));
+        mvc.perform(patch("/api/parking/1").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"revision\":0,\"name\":\"Nuevo\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Nuevo"));
+        verify(service).patch(eq(1L), any(ParkingDto.class));
     }
 
     @Test
     void deleteUsesAndroidIfMatchHeader() throws Exception {
-        mvc.perform(delete("/api/parkings/1").header("If-Match", "2"))
+        mvc.perform(delete("/api/parking/1").header("If-Match", "2"))
                 .andExpect(status().isNoContent());
         verify(service).delete(1L, 2L);
     }
@@ -67,14 +70,14 @@ class ParkingControllerTest {
     @Test
     void missingParkingReturns404() throws Exception {
         when(service.getById(99L)).thenThrow(new ParkingNotFoundException(99L));
-        mvc.perform(get("/api/parkings/99"))
+        mvc.perform(get("/api/parking/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("PARKING_NOT_FOUND"));
     }
 
     @Test
     void missingRevisionHeaderReturns400() throws Exception {
-        mvc.perform(delete("/api/parkings/1"))
+        mvc.perform(delete("/api/parking/1"))
                 .andExpect(status().isBadRequest());
     }
 }

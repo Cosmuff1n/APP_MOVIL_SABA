@@ -1,6 +1,6 @@
 # SABA — Microservicio de Incidencias (`incidents`)
 
-Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache NetBeans** desde `springboot/incidents/`. Su arquitectura sigue el capítulo **13** de `INFORME_SABA_1_1.md` y es independiente de Android, del microservicio de Estacionamientos y del futuro BFF.
+Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache NetBeans** desde `springboot/incidents/`. Su arquitectura sigue el capítulo **13** de `INFORME_SABA_1_1.md` y es independiente de Android, del microservicio de Estacionamientos y del BFF incorporado en `springboot/bff/`.
 
 > **Estado:** código fuente preparado. No se ha confirmado compilación con JDK 26, PostgreSQL real ni Cognito real. **No** se ha integrado a Android, ni se han implementado cargas remotas de fotografías/vídeos.
 
@@ -13,11 +13,9 @@ Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache 
 | `serviceimpl/IncidentServiceImpl.java` | Valida datos, estados y resolución; transforma DTO/Entity y coordina persistencia | `IncidentRepository`, `ParkingClient` |
 | `repository/IncidentRepository.java` | Ejecuta consultas de su propia base PostgreSQL con JPA | `IncidentEntity` |
 | `model/IncidentEntity.java` | Define la tabla `incidents`, con `@Version` interno | JPA / PostgreSQL |
-| `dto/IncidentDto.java` | Formato JSON de respuesta con nombres compatibles con `domain/model/Incident.kt` | Controller y ServiceImpl |
-| `dto/IncidentCreateDto.java` | Formato JSON de creación | Controller y ServiceImpl |
-| `dto/IncidentUpdateDto.java` | Formato JSON de actualización y cierre | Controller y ServiceImpl |
+| `dto/IncidentDto.java` | Único DTO para solicitudes de creación y actualización y respuestas remotas | Controller y ServiceImpl |
 | `client/ParkingClient.java` | Interfaz para comprobar `parkingId` remoto | ServiceImpl |
-| `client/ParkingClientImpl.java` | Implementa consulta `GET` con Spring `RestClient` | `GET /api/parkings/{id}` del MS parking |
+| `client/ParkingClientImpl.java` | Implementa consulta `GET` con Spring `RestClient` | `GET /api/parking/{id}` del MS parking |
 | `config/SecurityConfig.java` | Valida la firma, issuer y expiración del JWT mediante Spring Security | Cognito (JWKS públicos) |
 | `config/CognitoAccessTokenValidator.java` | Exige claim `token_use=access` y, si se configura, `client_id` | Spring Security |
 | `exception/` | Convierte errores en respuestas `400`, `404`, `409`, `503` | Controller/ServiceImpl/Client |
@@ -27,7 +25,7 @@ Proyecto **Java 26 + Spring Boot 4.0.9 + Gradle Groovy** para abrir en **Apache 
 Flujo de creación:
 
 ```text
-FUTURO: Android → Retrofit → BFF/IncidentClient → IncidentController
+PREVISTO (Android pendiente): Android → Retrofit → BFF/IncidentClient → IncidentController
                                                        ↓
                                              IncidentService (interfaz)
                                                        ↓
@@ -45,7 +43,7 @@ Al crear, Incidencias comprueba que el **ID remoto** del parking existe. Propaga
 ## 2. Requisitos y bases de datos
 
 - JDK **26** y Gradle Wrapper **9.9.1** incluidos en la configuración del proyecto (el JDK debe estar instalado).
-- PostgreSQL ejecutándose. Crear solamente la base de datos; Flyway crea las tablas:
+- PostgreSQL ejecutándose (tu Supabase PostgreSQL actual se configura mediante `config/local.properties`). Si usas PostgreSQL local, crear solamente la base de datos; Flyway crea las tablas:
 
 ```sql
 CREATE DATABASE saba_incidents;
@@ -67,7 +65,7 @@ $env:PARKING_SERVICE_URL = "http://localhost:8081"
 .\gradlew.bat bootRun
 ```
 
-Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parking` conserva **8081**. El BFF deberá utilizar otro puerto, por definir.
+Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parking` conserva **8081**. El BFF ya incorporado utiliza **8080**.
 
 **Seguridad:** sin `COGNITO_ISSUER_URI` se rechazan todas las solicitudes autenticadas; **no** existe un modo abierto de prueba. El microservicio verifica access tokens Cognito y no almacena contraseñas. El control de permisos por perfil y parking **está pendiente** del contrato de roles; por ahora un token válido da acceso a los endpoints implementados. No desplegar para datos sensibles sin definir y validar esos permisos.
 
@@ -81,7 +79,7 @@ Puerto por defecto: **8082**, configurable con `SERVER_PORT`. El proyecto `parki
 | `PUT` | `/api/incidents/{id}` | Reemplazar campos editables o registrar resolución | `200` + `IncidentDto`, o error |
 | `DELETE` | **No implementado** | El capítulo 13 lo declara opcional; falta definir política de retención/trazabilidad | No se publicará hasta decidir política |
 
-Las rutas **públicas** Android quedarán a cargo del BFF cuando exista. Este microservicio puede probarse directamente mediante una herramienta HTTP con un access token válido.
+Las rutas **públicas** Android pasan por el BFF ya implementado en el puerto **8080**, una vez configurada la app. Este microservicio aún se puede probar directamente por HTTP con un access token válido.
 
 ### POST: ejemplo
 
@@ -128,13 +126,20 @@ Para actualizar un incidente **sin resolver**, usar `isResolved:false` y omitir 
 
 ### JSON de respuesta
 
-`IncidentDto` conserva los nombres de campos de `Incident.kt`: `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterUserId`, `reporterName`, `failureType`, `description`, `status`, `reportedAt`, `evidenceUri`, `evidenceFileName`, `evidenceMimeType`, `isResolved`, `resolvedByUserId`, `resolvedByName`, `resolutionDescription` y `resolvedAt`.
+El único `IncidentDto.java` contiene **13 campos remotos implementados**: `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterName`, `failureType`, `description`, `status`, `reportedAt`, `isResolved`, `resolvedByName`, `resolutionDescription`, `resolvedAt`.
 
-**Limitación deliberada:** `reporterUserId`, `resolvedByUserId` y los campos de evidencia se devuelven como `null`. Los IDs locales de Room no identifican usuarios remotos, y guardar `file://` / `content://` del teléfono en PostgreSQL **no permitiría a otros dispositivos acceder a la imagen**. Para evidencias se necesitará un endpoint de subida y almacenamiento de archivos/objetos. Actualmente `POST` devuelve **400** si se intenta enviar URI o metadatos de evidencia sin archivo.
+No se incluyen `reporterUserId` ni `resolvedByUserId` (son identificadores locales que no deben usarse como identidad global), ni `evidenceUri`, `evidenceFileName` o `evidenceMimeType` (todavía no se suben archivos a un almacenamiento remoto). **No enviar estos campos.** Para evitar ignorar inadvertidamente evidencias, la deserialización del microservicio rechaza propiedades JSON desconocidas con `400`. Una implementación posterior de subida de archivos necesitará un contrato real.
+
+**Reglas del único DTO según la operación:**
+
+- **POST:** requiere `ticketCode`, `parkingId` remoto, `serviceId`, `failureType` y `description`; admite `reporterName` y `status` (por defecto `degradado`). Se rechazan `id`, `reportedAt`, `resolvedAt` y datos de resolución. `isResolved` se permite solo ausente o `false`.
+- **PUT:** exige `failureType`, `description`, `status` e `isResolved`. Puede incluir `resolvedByName` y `resolutionDescription` **solo** al resolver (`isResolved=true`, entonces ambos son obligatorios). Rechaza modificaciones de `id`, `ticketCode`, `parkingId`, `serviceId`, `reporterName` y fechas; el servidor asigna `resolvedAt`.
+- **GET:** devuelve los 13 campos remotos. Las reglas de validación por operación se mantienen en `IncidentServiceImpl`.
+
 
 ## 4. Respuestas y fallos
 
-- **400:** campos inválidos, estado desconocido, IDs no positivos, parking remoto inexistente, URI local de evidencia.
+- **400:** campos inválidos, estado desconocido, IDs no positivos, parking remoto inexistente o campos remotos no implementados (por ejemplo, evidencia local).
 - **401:** sin token válido / token incorrecto para Cognito.
 - **404:** ID de incidencia inexistente.
 - **409:** código de ticket duplicado, intento de modificar una incidencia ya resuelta o conflicto JPA.

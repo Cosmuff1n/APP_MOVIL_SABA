@@ -1,8 +1,6 @@
 package com.example.saba.incidents.controller;
 
-import com.example.saba.incidents.dto.IncidentCreateDto;
 import com.example.saba.incidents.dto.IncidentDto;
-import com.example.saba.incidents.dto.IncidentUpdateDto;
 import com.example.saba.incidents.service.IncidentService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/incidents")
 public class IncidentController {
+
     private final IncidentService service;
 
     public IncidentController(IncidentService service) {
@@ -30,7 +29,7 @@ public class IncidentController {
 
     @GetMapping
     public List<IncidentDto> list(@RequestParam(required = false) Long parkingId,
-                                  @RequestParam(required = false) Long serviceId) {
+            @RequestParam(required = false) Long serviceId) {
         return service.list(parkingId, serviceId);
     }
 
@@ -40,14 +39,14 @@ public class IncidentController {
     }
 
     @PostMapping
-    public ResponseEntity<IncidentDto> create(@Valid @RequestBody IncidentCreateDto request,
+    public ResponseEntity<IncidentDto> create(@Valid @RequestBody IncidentDto request,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         IncidentDto created = service.create(request, authorization);
         return ResponseEntity.created(URI.create("/api/incidents/" + created.id())).body(created);
     }
 
     @PutMapping("/{id}")
-    public IncidentDto update(@PathVariable long id, @Valid @RequestBody IncidentUpdateDto request) {
+    public IncidentDto update(@PathVariable long id, @Valid @RequestBody IncidentDto request) {
         return service.update(id, request);
     }
 }
