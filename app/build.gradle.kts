@@ -48,22 +48,26 @@ android {
         }
         buildConfigField("String", "BFF_API_BASE_URL", "\"${bffApiBaseUrl.trimEnd('/')}/\"")
 
-        val cognitoDefaults = mapOf(
-            "COGNITO_ISSUER" to "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_REEMPLAZAR",
-            "COGNITO_CLIENT_ID" to "REEMPLAZAR_CON_APP_CLIENT_ID",
-            "COGNITO_REDIRECT_URI" to "com.example.appsaba://cognito/callback",
-            "COGNITO_LOGOUT_URI" to "com.example.appsaba://cognito/logout",
-            "COGNITO_SCOPES" to "openid email profile"
+        // Cognito debe utilizar la configuración REAL del User Pool. No usar placeholders
+        // en BuildConfig: permiten generar un APK que fallará al autenticarse.
+        val cognitoKeys = listOf(
+            "COGNITO_ISSUER",
+            "COGNITO_CLIENT_ID",
+            "COGNITO_REDIRECT_URI",
+            "COGNITO_LOGOUT_URI",
+            "COGNITO_SCOPES"
         )
-
-        cognitoDefaults.forEach { (key, defaultValue) ->
-            val value = envProps.getProperty(key)
-                ?.ifBlank { null }
-                ?: System.getenv(key)
-                ?.ifBlank { null }
-                ?: defaultValue
-
-            buildConfigField("String", key, "\"$value\"")
+        cognitoKeys.forEach { key ->
+            val value = envProps.getProperty(key)?.trim()?.takeIf { it.isNotEmpty() }
+                ?: System.getenv(key)?.trim()?.takeIf { it.isNotEmpty() }
+                ?: throw GradleException("Falta $key en .env o en el entorno de compilación")
+            require(!value.contains("REEMPLAZAR", ignoreCase = true) &&
+                    !value.contains("TU_USER_POOL", ignoreCase = true) &&
+                    !value.contains("TU_CLIENT", ignoreCase = true)) {
+                "$key contiene un valor ficticio de Cognito"
+            }
+            val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"")
+            buildConfigField("String", key, "\"$escaped\"")
         }
     }
 

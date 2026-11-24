@@ -83,7 +83,7 @@ class HomeViewModel @Inject constructor(
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (error: HttpException) {
                 val msg = when (error.code()) {
-                    401 -> "Sesion Cognito caducada. Cierra sesion e ingresa otra vez."
+                    401 -> "Autenticacion rechazada (HTTP 401). Comprueba Cognito en el BFF y los microservicios."
                     409 -> "Conflicto de revision: actualiza antes de editar."
                     else -> "HTTP ${error.code()} al conectar con BFF"
                 }
