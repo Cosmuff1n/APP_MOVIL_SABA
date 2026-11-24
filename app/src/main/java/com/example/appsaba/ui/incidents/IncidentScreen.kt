@@ -1,7 +1,5 @@
 package com.example.appsaba.ui.incidents
 
-import com.example.appsaba.BuildConfig
-
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -92,7 +90,7 @@ fun IncidentScreen(cognitoAccessToken: String? = null) {
     val allServices = uiState.services
     val allIncidents = uiState.incidents
     val feedback = uiState.feedback
-    val busy = uiState.busy
+    val busy = uiState.busy || uiState.remoteBusy
     val showSheet = uiState.isReportSheetVisible
 
     // Elegir un parking real y no mostrar datos cruzados cuando cambie.
@@ -109,12 +107,17 @@ fun IncidentScreen(cognitoAccessToken: String? = null) {
     }
     val selected = parkings.firstOrNull { it.id == selectedId }
     val services = allServices.filter { it.parkingId == selectedId }
-    val incidents = allIncidents.filter { it.parkingId == selectedId }
+    // El ViewModel ya filtra Room por id local y BFF por remoteId de Parking.
+    val incidents = allIncidents
+    val incidentByTicketId = incidents.associateBy { incident ->
+        incident.remoteId?.let { "remote:$it" } ?: incident.id.toString()
+    }
     val tickets = incidents.map { incident ->
         Ticket(
-            id = incident.id.toString(),
-            equipo = services.firstOrNull { it.id == incident.serviceId }?.name
-                ?: "Equipo #${incident.serviceId}",
+            id = incident.remoteId?.let { "remote:$it" } ?: incident.id.toString(),
+            equipo = if (incident.remoteId != null) "Servicio remoto #${incident.serviceId}"
+                     else services.firstOrNull { it.id == incident.serviceId }?.name
+                         ?: "Equipo #${incident.serviceId}",
             tipoFalla = incident.failureType,
             estado = when (incident.status) {
                 "fuera-servicio" -> EstadoEquipo.FUERA_DE_SERVICIO
@@ -122,7 +125,8 @@ fun IncidentScreen(cognitoAccessToken: String? = null) {
                 else -> EstadoEquipo.FUNCIONAL
             },
             observaciones = incident.description,
-            activo = !incident.isResolved
+            activo = !incident.isResolved,
+            isRemote = incident.remoteId != null
         )
     }
     IncidentsContent(
@@ -149,16 +153,20 @@ fun IncidentScreen(cognitoAccessToken: String? = null) {
         services = services,
         onSelectParking = { model.selectParking(it) },
         onResolveTicket = { ticket, resolver, solution ->
-            incidents.firstOrNull { it.id.toString() == ticket.id }?.let {
+            incidentByTicketId[ticket.id]?.let {
                 model.resolveIncident(it, resolver, solution)
             }
         },
         onDeleteTicket = { ticket ->
-            incidents.firstOrNull { it.id.toString() == ticket.id }?.let(model::deleteIncident)
+            incidentByTicketId[ticket.id]?.let(model::deleteIncident)
         },
         busy = busy,
         parkingName = selected?.name ?: "SIN ESTACIONAMIENTO",
-        remoteSection = { if (BuildConfig.DEBUG) RemoteIncidentsSection(cognitoAccessToken, model) }
+        remoteAvailable = uiState.remoteAvailable,
+        remoteBusy = uiState.remoteBusy,
+        remoteFeedback = uiState.remoteFeedback,
+        onRefreshRemote = model::refreshRemote,
+        allowLocalReport = selected?.remoteId == null
     )
 }
 
@@ -177,7 +185,11 @@ internal fun IncidentsContent(
     onDeleteTicket: (Ticket) -> Unit = {},
     busy: Boolean = false,
     parkingName: String = "PARKING PLAZA ITALIA",
-    remoteSection: @Composable () -> Unit = {}
+    remoteAvailable: Boolean = false,
+    remoteBusy: Boolean = false,
+    remoteFeedback: String? = null,
+    onRefreshRemote: () -> Unit = {},
+    allowLocalReport: Boolean = true
 ) {
     val activos = tickets.count { it.activo }
 
@@ -189,7 +201,6 @@ internal fun IncidentsContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { IncidentsHeader(parkingName) }
-        item { remoteSection() }
         if (parkings.size > 1) {
             item {
                 Row(
@@ -206,8 +217,23 @@ internal fun IncidentsContent(
                 }
             }
         }
+        if (remoteAvailable) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("BFF · Consulta integrada", color = TextMuted, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onRefreshRemote, enabled = !remoteBusy) {
+                        Text(if (remoteBusy) "Consultando..." else "Actualizar")
+                    }
+                }
+                remoteFeedback?.let { Text(it, fontSize = 12.sp, color = TextMuted) }
+            }
+        }
         item { OperationalBanner(activos) }
-        item { ReportButton(onClick = onOpenSheet) }
+        if (allowLocalReport) {
+            item { ReportButton(onClick = onOpenSheet) }
+        } else {
+            item { Text("Registro remoto pendiente de correspondencia válida de serviceId; el formulario local no se usa para este parking.", fontSize = 12.sp, color = TextMuted) }
+        }
         item {
             Column {
                 Text(
@@ -496,15 +522,17 @@ private fun TicketItem(
                 Spacer(Modifier.height(6.dp))
                 Text(ticket.observaciones, fontSize = 13.sp, color = TextDark)
             }
-            // Acciones originales de Room: resolver y eliminar registros reales.
+            // Misma acción de resolver; el ViewModel decide Room o BFF según remoteId.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (ticket.activo) {
                     TextButton(enabled = !busy, onClick = { showResolve = true }) {
                         Text("Resolver")
                     }
                 }
-                TextButton(enabled = !busy, onClick = { showDelete = true }) {
-                    Text("Eliminar ticket", color = DangerDot)
+                if (!ticket.isRemote) {
+                    TextButton(enabled = !busy, onClick = { showDelete = true }) {
+                        Text("Eliminar ticket", color = DangerDot)
+                    }
                 }
             }
         }

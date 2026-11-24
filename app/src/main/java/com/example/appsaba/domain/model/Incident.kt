@@ -19,5 +19,7 @@ data class Incident(
     val resolvedByUserId: Long? = null,
     val resolvedByName: String? = null,
     val resolutionDescription: String? = null,
-    val resolvedAt: Long? = null
+    val resolvedAt: Long? = null,
+    /** ID de PostgreSQL; nunca se usa como PK de Room. */
+    val remoteId: Long? = null
 )

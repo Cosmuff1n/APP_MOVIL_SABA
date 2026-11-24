@@ -3,7 +3,6 @@ package com.example.appsaba.ui.incidents
 import com.example.appsaba.domain.model.Parking
 import com.example.appsaba.domain.model.Service
 import com.example.appsaba.domain.model.Incident
-import com.example.appsaba.domain.model.RemoteIncident
 
 data class IncidentUiState(
     val parkings: List<Parking> = emptyList(),
@@ -12,7 +11,11 @@ data class IncidentUiState(
     val incidents: List<Incident> = emptyList(),
     val isReportSheetVisible: Boolean = false,
     val busy: Boolean = false,
-    val feedback: String? = null
+    val feedback: String? = null,
+    /** Estado de la consulta remota dentro del mismo UiState. */
+    val remoteBusy: Boolean = false,
+    val remoteFeedback: String? = null,
+    val remoteAvailable: Boolean = false
 )
 
 
@@ -25,11 +28,6 @@ data class Ticket(
     val tipoFalla: String,
     val estado: EstadoEquipo,
     val observaciones: String,
-    val activo: Boolean = true
-)
-/** Sesión remota independiente de la lista de incidencias locales. */
-data class RemoteIncidentUiState(
-    val incidents: List<RemoteIncident> = emptyList(),
-    val busy: Boolean = false,
-    val feedback: String = "Sin consultar BFF"
+    val activo: Boolean = true,
+    val isRemote: Boolean = false
 )

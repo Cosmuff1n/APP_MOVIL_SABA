@@ -1,10 +1,8 @@
 package com.example.appsaba.data.repository
 
 import com.example.appsaba.domain.model.Incident
-import com.example.appsaba.domain.model.RemoteIncident
 import com.example.appsaba.data.remote.datasource.IncidentRemoteDataSource
 import com.example.appsaba.data.remote.dto.BffIncidentDto
-import com.example.appsaba.data.mapper.toRemoteDomain
 import java.util.UUID
 import com.example.appsaba.domain.repository.IncidentRepository
 import com.example.appsaba.domain.repository.ServiceRepository
@@ -26,20 +24,25 @@ class IncidentRepositoryImpl @Inject constructor(
     override fun observeActiveCount(parkingId: Long) = source.observeActiveCount(parkingId)
     override suspend fun getById(incidentId: Long) = source.getById(incidentId)?.toDomain()
     override suspend fun insert(incident: Incident): Long {
+        require(incident.remoteId == null) { "Incidencia remota no se guarda como local sin mapeo seguro" }
         validateService(incident)
         return source.insert(incident.toEntity())
     }
     override suspend fun update(incident: Incident): Int {
+        require(incident.remoteId == null) { "No edites incidencias remotas mediante Room" }
         validateService(incident)
         return source.update(incident.toEntity())
     }
-    override suspend fun delete(incident: Incident) = source.delete(incident.toEntity())
-    override suspend fun listRemote(token: String): List<RemoteIncident> =
-        remote.list(token).map { it.toRemoteDomain() }
+    override suspend fun delete(incident: Incident): Int {
+        require(incident.remoteId == null) { "Borrado remoto no soportado" }
+        return source.delete(incident.toEntity())
+    }
+    override suspend fun listRemote(token: String): List<Incident> =
+        remote.list(token).map { it.toDomain() }
 
     override suspend fun createRemote(token: String, parkingId: Long, serviceId: Long,
                                       reporterName: String, failureType: String,
-                                      description: String, status: String): RemoteIncident {
+                                      description: String, status: String): Incident {
         // parkingId es el ID positivo REMOTO que asigna Spring, nunca Parking.id de SQLite.
         require(parkingId > 0 && serviceId > 0) { "Usa IDs remotos positivos para parking y service" }
         require(failureType.isNotBlank() && description.isNotBlank()) { "Falla y descripción obligatorias" }
@@ -50,11 +53,11 @@ class IncidentRepositoryImpl @Inject constructor(
             parkingId = parkingId, serviceId = serviceId, reporterName = reporterName.trim(),
             failureType = failureType.trim(), description = description.trim(), status = status
         )
-        return remote.create(token, request).toRemoteDomain()
+        return remote.create(token, request).toDomain()
     }
 
-    override suspend fun resolveRemote(token: String, incident: RemoteIncident,
-                                       resolvedByName: String, resolutionDescription: String): RemoteIncident {
+    override suspend fun resolveRemote(token: String, incident: Incident,
+                                       resolvedByName: String, resolutionDescription: String): Incident {
         require(!incident.isResolved) { "La incidencia ya está resuelta" }
         require(resolvedByName.isNotBlank() && resolutionDescription.isNotBlank()) { "Completa la resolución" }
         // PUT del backend exige failureType, description, status e isResolved.
@@ -66,7 +69,7 @@ class IncidentRepositoryImpl @Inject constructor(
             resolvedByName = resolvedByName.trim(),
             resolutionDescription = resolutionDescription.trim()
         )
-        return remote.update(token, incident.id, request).toRemoteDomain()
+        return remote.update(token, requireNotNull(incident.remoteId) { "No es una incidencia remota" }, request).toDomain()
     }
 
     private suspend fun validateService(incident: Incident) {

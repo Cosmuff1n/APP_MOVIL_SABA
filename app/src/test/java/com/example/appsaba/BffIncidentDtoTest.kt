@@ -1,6 +1,6 @@
 package com.example.appsaba
 
-import com.example.appsaba.data.mapper.toRemoteDomain
+import com.example.appsaba.data.mapper.toDomain
 import com.example.appsaba.data.remote.dto.BffIncidentDto
 import com.google.gson.Gson
 import org.junit.Assert.*
@@ -22,14 +22,15 @@ class BffIncidentDtoTest {
             parkingId = 3L, serviceId = 5L,
             failureType = "POS", description = "Error", status = "fuera-servicio",
             reportedAt = 100L, isResolved = false)
-        val incident = incoming.toRemoteDomain()
-        assertEquals(20L, incident.id)
+        val incident = incoming.toDomain()
+        assertEquals(0L, incident.id)
+        assertEquals(20L, incident.remoteId)
         assertEquals(3L, incident.parkingId)
         assertFalse(incident.isResolved)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun remoteResponseMustContainId() {
-        BffIncidentDto(ticketCode = "INC-0", parkingId = 3L, serviceId = 5L).toRemoteDomain()
+        BffIncidentDto(ticketCode = "INC-0", parkingId = 3L, serviceId = 5L).toDomain()
     }
 }
