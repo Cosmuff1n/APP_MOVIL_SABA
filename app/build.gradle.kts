@@ -2,6 +2,7 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -43,22 +44,20 @@ android {
             ?: "http://34.203.14.129/"
         buildConfigField("String", "EC2_API_BASE_URL", "\"$ec2ApiBaseUrl\"")
 
-        val cognitoVariables = listOf(
-            "COGNITO_ISSUER",
-            "COGNITO_CLIENT_ID",
-            "COGNITO_REDIRECT_URI",
-            "COGNITO_LOGOUT_URI",
-            "COGNITO_SCOPES"
+        val cognitoDefaults = mapOf(
+            "COGNITO_ISSUER" to "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_REEMPLAZAR",
+            "COGNITO_CLIENT_ID" to "REEMPLAZAR_CON_APP_CLIENT_ID",
+            "COGNITO_REDIRECT_URI" to "com.example.appsaba://cognito/callback",
+            "COGNITO_LOGOUT_URI" to "com.example.appsaba://cognito/logout",
+            "COGNITO_SCOPES" to "openid email profile"
         )
 
-        cognitoVariables.forEach { key ->
+        cognitoDefaults.forEach { (key, defaultValue) ->
             val value = envProps.getProperty(key)
+                ?.ifBlank { null }
                 ?: System.getenv(key)
-                ?: ""
-
-            require(value.isNotBlank()) {
-                "Falta configurar $key en .env"
-            }
+                ?.ifBlank { null }
+                ?: defaultValue
 
             buildConfigField("String", key, "\"$value\"")
         }
@@ -117,4 +116,8 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(platform(libs.androidx.compose.bom))
 
+}
+
+tasks.register("prepareKotlinBuildScriptModel") {
+    // Placeholder task for IDE script model sync
 }
