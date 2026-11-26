@@ -1,6 +1,7 @@
 package com.example.appsaba.data.repository
 
 import com.example.appsaba.domain.model.Incident
+import com.example.appsaba.data.remote.datasource.IncidentRemoteDataSource
 import com.example.appsaba.data.remote.dto.BffIncidentDto
 import java.util.UUID
 import com.example.appsaba.domain.repository.IncidentRepository
@@ -14,7 +15,8 @@ import kotlinx.coroutines.flow.map
 
 class IncidentRepositoryImpl @Inject constructor(
     private val source: IncidentLocalDataSource,
-    private val services: ServiceRepository
+    private val services: ServiceRepository,
+    private val remote: IncidentRemoteDataSource
 ) : IncidentRepository {
     override fun observeByParking(parkingId: Long) = source.observeByParking(parkingId).map { it.map(IncidentEntity::toDomain) }
     override fun observeActiveByParking(parkingId: Long) = source.observeActiveByParking(parkingId).map { it.map(IncidentEntity::toDomain) }
