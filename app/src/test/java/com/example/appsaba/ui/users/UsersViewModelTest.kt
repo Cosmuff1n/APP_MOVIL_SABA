@@ -22,6 +22,7 @@ class UsersViewModelTest {
     private lateinit var repo: UserRepository
     private lateinit var vm: UsersViewModel
     private val example = User(id = 4, name = "Ana", rut = null, isActive = true)
+
     @Before
     fun setup() {
         repo = mockk(relaxed = true)

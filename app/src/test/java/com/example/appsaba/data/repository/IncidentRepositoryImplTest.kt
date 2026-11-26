@@ -33,7 +33,7 @@ class IncidentRepositoryImplTest {
     fun setup() {
         local = mockk(relaxed = true); remote = mockk(relaxed = true); services =
             mockk(relaxed = true)
-        subject = IncidentRepositoryImpl(local, services, remote)
+        subject = IncidentRepositoryImpl(local, services)
     }
 
     private fun validService() = Service(id = 3, parkingId = 4, name = "POS", type = "pos")

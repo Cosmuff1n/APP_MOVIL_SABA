@@ -7,7 +7,6 @@ import org.junit.Test
 
 class HomeUiStateTest {
     private val selected = Parking(id = 3, name = "Centro", address = "A")
-
     @Test
     fun noSelectedParkingWithoutMatch() {
         assertNull(
