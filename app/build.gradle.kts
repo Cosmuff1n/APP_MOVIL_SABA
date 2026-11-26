@@ -74,6 +74,11 @@ android {
     }
 
     buildTypes {
+
+        getByName("debug") {
+            enableUnitTestCoverage = true
+        }
+
         release {
             optimization {
                 enable = true
