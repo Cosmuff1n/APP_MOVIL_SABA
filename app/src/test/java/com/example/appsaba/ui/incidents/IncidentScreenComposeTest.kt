@@ -1,8 +1,6 @@
 package com.example.appsaba.ui.incidents
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,11 +21,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class IncidentScreenComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
 
-    @Test
-    fun vacioMuestraHistorialYPermiteAbrirFormulario() {
+    @Test fun vacioMuestraHistorialYPermiteAbrirFormulario() {
         var opens = 0
         compose.setContent {
             IncidentsContent(emptyList(), false, { opens++ }, {}, {})
@@ -37,44 +33,35 @@ class IncidentScreenComposeTest {
         assertEquals(1, opens)
     }
 
-    @Test
-    fun sinCorrespondenciaRemotaOcultaFormularioLocal() {
+    @Test fun sinCorrespondenciaRemotaOcultaFormularioLocal() {
         compose.setContent {
             IncidentsContent(emptyList(), false, {}, {}, {}, allowLocalReport = false)
         }
         compose.onNodeWithText("Reportar incidencia").assertDoesNotExist()
     }
 
-    @Test
-    fun dosParkingsPermitenSeleccion() {
-        val parkings = listOf(
-            Parking(id = 1, name = "Norte", address = "A"),
-            Parking(id = 2, name = "Sur", address = "B")
-        )
+    @Test fun dosParkingsPermitenSeleccion() {
+        val parkings = listOf(Parking(id = 1, name = "Norte", address = "A"), Parking(id = 2, name = "Sur", address = "B"))
         var selected: Long? = null
         compose.setContent {
-            IncidentsContent(
-                emptyList(), false, {}, {}, {}, parkings = parkings,
+            IncidentsContent(emptyList(), false, {}, {}, {}, parkings = parkings,
                 selectedParkingId = 1, onSelectParking = { selected = it })
         }
         compose.onNodeWithText("Sur").performClick()
         assertEquals(2L, selected)
     }
 
-    @Test
-    fun actualizarBffInvocaCallback() {
+    @Test fun actualizarBffInvocaCallback() {
         var refreshes = 0
         compose.setContent {
-            IncidentsContent(
-                emptyList(), false, {}, {}, {}, remoteAvailable = true,
+            IncidentsContent(emptyList(), false, {}, {}, {}, remoteAvailable = true,
                 onRefreshRemote = { refreshes++ })
         }
         compose.onNodeWithText("Actualizar").performClick()
         assertEquals(1, refreshes)
     }
 
-    @Test
-    fun incidentScreenUsaElViewModelConfigurado() {
+    @Test fun incidentScreenUsaElViewModelConfigurado() {
         val vm = mockk<IncidentViewModel>(relaxed = true)
         every { vm.uiState } returns MutableStateFlow(IncidentUiState())
         val owner = ScreenTestViewModelOwner(vm)

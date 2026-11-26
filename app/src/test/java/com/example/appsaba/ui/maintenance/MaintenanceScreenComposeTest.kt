@@ -1,7 +1,6 @@
 package com.example.appsaba.ui.maintenance
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,8 +21,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class MaintenanceScreenComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
 
     private fun show(onManage: () -> Unit = {}) {
         val maintenance = mockk<MaintenanceViewModel>(relaxed = true)
@@ -38,16 +36,13 @@ class MaintenanceScreenComposeTest {
         }
     }
 
-    @Test
-    fun muestraEstadoSinEquipos() {
+    @Test fun muestraEstadoSinEquipos() {
         show()
         compose.onNodeWithText("Panel de mantenimiento").assertExists()
-        compose.onNodeWithText("Aún no hay equipos. Registra primero un estacionamiento y sus equipos en Datos locales.")
-            .assertExists()
+        compose.onNodeWithText("Aún no hay equipos. Registra primero un estacionamiento y sus equipos en Datos locales.").assertExists()
     }
 
-    @Test
-    fun botonAdministrarEquiposInvocaNavegacion() {
+    @Test fun botonAdministrarEquiposInvocaNavegacion() {
         var navigations = 0
         show(onManage = { navigations++ })
         compose.onNodeWithText("Administrar equipos locales (Room)").performClick()

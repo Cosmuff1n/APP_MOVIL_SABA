@@ -1,10 +1,7 @@
 package com.example.appsaba.ui.parkings
 
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,27 +18,17 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ParkingScreenComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
     private val vm = mockk<ParkingViewModel>(relaxed = true)
-    private val row = Parking(
-        id = 7,
-        name = "La Florida",
-        address = "Calle A",
-        commune = "La Florida",
-        totalSpaces = 50,
-        freeSpaces = 20
-    )
+    private val row = Parking(id = 7, name = "La Florida", address = "Calle A", commune = "La Florida", totalSpaces = 50, freeSpaces = 20)
 
-    @Test
-    fun pantallaVaciaMuestraTituloYMensaje() {
+    @Test fun pantallaVaciaMuestraTituloYMensaje() {
         compose.setContent { ParkingScreen(emptyList(), false, vm) }
         compose.onNodeWithText("1. Estacionamientos").assertExists()
         compose.onNodeWithText("Aún no hay estacionamientos en SQLite.").assertExists()
     }
 
-    @Test
-    fun formularioEnviaCamposAlViewModel() {
+    @Test fun formularioEnviaCamposAlViewModel() {
         compose.setContent { ParkingScreen(emptyList(), false, vm) }
         compose.onAllNodes(hasSetTextAction())[0].performTextInput("Centro")
         compose.onAllNodes(hasSetTextAction())[1].performTextInput("Calle 123")
@@ -51,39 +38,26 @@ class ParkingScreenComposeTest {
         verify(exactly = 1) { vm.saveParking(null, "Centro", "Calle 123", "Santiago", "0", "0") }
     }
 
-    @Test
-    fun busyDeshabilitaGuardar() {
+    @Test fun busyDeshabilitaGuardar() {
         compose.setContent { ParkingScreen(emptyList(), true, vm) }
         compose.onNodeWithText("Agregar").assertIsNotEnabled()
     }
 
-    @Test
-    fun muestraRegistroYPermiteCambiarEstado() {
+    @Test fun muestraRegistroYPermiteCambiarEstado() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("La Florida").assertExists()
         compose.onNodeWithText("Desactivar").performClick()
         verify(exactly = 1) { vm.toggleParking(row) }
     }
 
-    @Test
-    fun editarCargaCamposYGuardaUsandoIdExistente() {
+    @Test fun editarCargaCamposYGuardaUsandoIdExistente() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("Editar").performClick()
         compose.onNodeWithText("Guardar cambios").performClick()
-        verify(exactly = 1) {
-            vm.saveParking(
-                7L,
-                "La Florida",
-                "Calle A",
-                "La Florida",
-                "50",
-                "20"
-            )
-        }
+        verify(exactly = 1) { vm.saveParking(7L, "La Florida", "Calle A", "La Florida", "50", "20") }
     }
 
-    @Test
-    fun eliminarPideConfirmacionAntesDeBorrar() {
+    @Test fun eliminarPideConfirmacionAntesDeBorrar() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("Eliminar").performClick()
         compose.onNodeWithText("Confirmar eliminación").assertExists()
@@ -92,8 +66,7 @@ class ParkingScreenComposeTest {
         verify(exactly = 0) { vm.deleteParking(any()) }
     }
 
-    @Test
-    fun eliminarConfirmadoInvocaViewModel() {
+    @Test fun eliminarConfirmadoInvocaViewModel() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("Eliminar").performClick()
         // El diálogo y la tarjeta contienen dos botones "Eliminar"; seleccionar el último.
@@ -101,8 +74,7 @@ class ParkingScreenComposeTest {
         verify(exactly = 1) { vm.deleteParking(row) }
     }
 
-    @Test
-    fun limpiarRestableceModoCreacion() {
+    @Test fun limpiarRestableceModoCreacion() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("Editar").performClick()
         compose.onNodeWithText("Limpiar").performClick()

@@ -1,7 +1,6 @@
 package com.example.appsaba.ui.maintenance
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -25,24 +24,17 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class MaintenanceDetailsComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
 
     private val parking = Parking(id = 21L, name = "Plaza Norte", address = "A")
-    private val service = Service(
-        id = 34L, parkingId = 21L, name = "Barrera entrada", type = "barriers",
-        status = "degradado", detail = "Entrada A"
-    )
+    private val service = Service(id = 34L, parkingId = 21L, name = "Barrera entrada", type = "barriers",
+        status = "degradado", detail = "Entrada A")
     private val maintenance = mockk<MaintenanceViewModel>(relaxed = true)
     private val incidents = mockk<IncidentViewModel>(relaxed = true)
 
     private fun show() {
         every { maintenance.uiState } returns MutableStateFlow(
-            MaintenanceUiState(
-                parkings = listOf(parking),
-                selectedParkingId = 21L,
-                services = listOf(service)
-            )
+            MaintenanceUiState(parkings = listOf(parking), selectedParkingId = 21L, services = listOf(service))
         )
         every { incidents.uiState } returns MutableStateFlow(IncidentUiState())
         val owner = ScreenTestViewModelOwner(maintenance, incidents)
@@ -51,15 +43,13 @@ class MaintenanceDetailsComposeTest {
         }
     }
 
-    @Test
-    fun estadoOperacionalMuestraServicioDegradado() {
+    @Test fun estadoOperacionalMuestraServicioDegradado() {
         show()
         compose.onNodeWithText("Barrera entrada").assertExists()
         compose.onNodeWithText("Reportar falla crítica").assertExists()
     }
 
-    @Test
-    fun detallePermiteVerYVolverDelProcedimiento() {
+    @Test fun detallePermiteVerYVolverDelProcedimiento() {
         show()
         compose.onNodeWithText("Barrera entrada").performClick()
         compose.onNodeWithText("Detalle del servicio").assertExists()
@@ -69,16 +59,14 @@ class MaintenanceDetailsComposeTest {
         compose.onNodeWithText("Panel de mantenimiento").assertExists()
     }
 
-    @Test
-    fun detalleCambiaEstadoEnViewModel() {
+    @Test fun detalleCambiaEstadoEnViewModel() {
         show()
         compose.onNodeWithText("Barrera entrada").performClick()
         compose.onNodeWithText("Operativo").performClick()
         verify(exactly = 1) { maintenance.setServiceStatus(service, "operativo") }
     }
 
-    @Test
-    fun detalleOfreceFormularioDeIncidencia() {
+    @Test fun detalleOfreceFormularioDeIncidencia() {
         show()
         compose.onNodeWithText("Barrera entrada").performClick()
         compose.onNodeWithText("Reportar incidencia").performClick()

@@ -1,7 +1,6 @@
 package com.example.appsaba.ui.home
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,11 +21,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class HomeScreenComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
 
-    @Test
-    fun sinParkingMuestraEstadoVacioYNavegaADatos() {
+    @Test fun sinParkingMuestraEstadoVacioYNavegaADatos() {
         var clicks = 0
         compose.setContent { HomeContent(state = HomeUiState(), onOpenLocalData = { clicks++ }) }
         compose.onNodeWithText("Aún no hay estacionamientos registrados.").assertExists()
@@ -34,8 +31,7 @@ class HomeScreenComposeTest {
         assertEquals(1, clicks)
     }
 
-    @Test
-    fun muestraParkingYAbreReporte() {
+    @Test fun muestraParkingYAbreReporte() {
         var reportes = 0
         val parking = Parking(id = 2, name = "Plaza Norte", address = "Ruta 1")
         compose.setContent {
@@ -49,13 +45,9 @@ class HomeScreenComposeTest {
         assertEquals(1, reportes)
     }
 
-    @Test
-    fun permiteElegirParkingEntreDos() {
+    @Test fun permiteElegirParkingEntreDos() {
         var selected = 0L
-        val parkings = listOf(
-            Parking(id = 1, name = "Uno", address = "A"),
-            Parking(id = 2, name = "Dos", address = "B")
-        )
+        val parkings = listOf(Parking(id = 1, name = "Uno", address = "A"), Parking(id = 2, name = "Dos", address = "B"))
         compose.setContent {
             HomeContent(
                 state = HomeUiState(), parkings = parkings, selectedParkingId = 1,
@@ -66,8 +58,7 @@ class HomeScreenComposeTest {
         assertEquals(2L, selected)
     }
 
-    @Test
-    fun homeScreenConectaViewModelConBotonLogout() {
+    @Test fun homeScreenConectaViewModelConBotonLogout() {
         val vm = mockk<HomeViewModel>(relaxed = true)
         every { vm.uiState } returns MutableStateFlow(HomeUiState())
         var closes = 0

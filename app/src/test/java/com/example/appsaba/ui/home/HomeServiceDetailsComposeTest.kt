@@ -1,6 +1,5 @@
 package com.example.appsaba.ui.home
 
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -17,64 +16,45 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class HomeServiceDetailsComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
     private val parking = Parking(id = 9, name = "Local Central", address = "Calle 9")
     private fun service(status: String = "operativo", name: String = "Lector de salida") =
         Service(id = 4, parkingId = 9, name = name, type = "lpr", status = status)
 
-    @Test
-    fun sinServiciosMuestraEstadoCorrespondiente() {
-        compose.setContent {
-            HomeContent(
-                state = HomeUiState(),
-                parkings = listOf(parking),
-                selectedParkingId = 9
-            )
-        }
+    @Test fun sinServiciosMuestraEstadoCorrespondiente() {
+        compose.setContent { HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9) }
         compose.onNodeWithText("Sin servicios registrados").assertExists()
     }
 
-    @Test
-    fun todosOperativosPresentaEstadoCorrecto() {
+    @Test fun todosOperativosPresentaEstadoCorrecto() {
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
-                services = listOf(service())
-            )
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+                services = listOf(service()))
         }
         compose.onNodeWithText("Todo operativo").assertExists()
         compose.onNodeWithText("Lector de salida").assertExists()
     }
 
-    @Test
-    fun unServicioDegradadoAlteraElBanner() {
+    @Test fun unServicioDegradadoAlteraElBanner() {
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
-                services = listOf(service("degradado"))
-            )
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+                services = listOf(service("degradado")))
         }
         compose.onNodeWithText("Con servicios degradados").assertExists()
     }
 
-    @Test
-    fun fueraDeServicioTienePrioridadSobreDegradado() {
+    @Test fun fueraDeServicioTienePrioridadSobreDegradado() {
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
-                services = listOf(service("degradado"), service("fuera-servicio", "POS de entrada"))
-            )
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+                services = listOf(service("degradado"), service("fuera-servicio", "POS de entrada")))
         }
         compose.onNodeWithText("Con servicios fuera de servicio").assertExists()
     }
 
-    @Test
-    fun abrirDetalleYVerProcedimientoLlamaGuia() {
+    @Test fun abrirDetalleYVerProcedimientoLlamaGuia() {
         var guias = 0
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
                 services = listOf(service()), onOpenGuides = { guias++ })
         }
         compose.onNodeWithText("Lector de salida").performClick()
@@ -82,12 +62,10 @@ class HomeServiceDetailsComposeTest {
         assertEquals(1, guias)
     }
 
-    @Test
-    fun abrirDetalleYReportarLlamaReporte() {
+    @Test fun abrirDetalleYReportarLlamaReporte() {
         var reportes = 0
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
                 services = listOf(service()), onReportIncident = { reportes++ })
         }
         compose.onNodeWithText("Lector de salida").performClick()
@@ -95,12 +73,10 @@ class HomeServiceDetailsComposeTest {
         assertEquals(1, reportes)
     }
 
-    @Test
-    fun abrirDetalleYContactarSauLlamaGuia() {
+    @Test fun abrirDetalleYContactarSauLlamaGuia() {
         var guias = 0
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
                 services = listOf(service()), onOpenGuides = { guias++ })
         }
         compose.onNodeWithText("Lector de salida").performClick()
@@ -108,13 +84,10 @@ class HomeServiceDetailsComposeTest {
         assertEquals(1, guias)
     }
 
-    @Test
-    fun cerrarDetalleMantienePantallaPrincipal() {
+    @Test fun cerrarDetalleMantienePantallaPrincipal() {
         compose.setContent {
-            HomeContent(
-                state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
-                services = listOf(service())
-            )
+            HomeContent(state = HomeUiState(), parkings = listOf(parking), selectedParkingId = 9,
+                services = listOf(service()))
         }
         compose.onNodeWithText("Lector de salida").performClick()
         compose.onNodeWithText("Cerrar").performClick()

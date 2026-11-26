@@ -1,8 +1,6 @@
 package com.example.appsaba.ui.home
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,8 +19,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class Ec2ParkingsSectionComposeTest {
-    @get:Rule
-    val compose = createComposeRule()
+    @get:Rule val compose = createComposeRule()
     private val vm = mockk<HomeViewModel>(relaxed = true)
 
     private fun show(token: String?, state: HomeUiState = HomeUiState()) {
@@ -35,16 +32,13 @@ class Ec2ParkingsSectionComposeTest {
         }
     }
 
-    @Test
-    fun sinCognitoInformaQueNoPuedeOperarRemotamente() {
+    @Test fun sinCognitoInformaQueNoPuedeOperarRemotamente() {
         show(null)
-        compose.onNodeWithText("Para operaciones remotas entra con Cognito. Room local sigue disponible.")
-            .assertExists()
+        compose.onNodeWithText("Para operaciones remotas entra con Cognito. Room local sigue disponible.").assertExists()
         compose.onNodeWithText("Actualizar desde BFF").assertDoesNotExist()
     }
 
-    @Test
-    fun conTokenSeOfrecenAccionesYActualiza() {
+    @Test fun conTokenSeOfrecenAccionesYActualiza() {
         show("token-simulado")
         compose.onNodeWithText("Actualizar desde BFF").performClick()
         verify(exactly = 1) { vm.refreshRemote() }
