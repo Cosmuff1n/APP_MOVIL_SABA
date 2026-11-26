@@ -61,9 +61,11 @@ android {
             val value = envProps.getProperty(key)?.trim()?.takeIf { it.isNotEmpty() }
                 ?: System.getenv(key)?.trim()?.takeIf { it.isNotEmpty() }
                 ?: throw GradleException("Falta $key en .env o en el entorno de compilación")
-            require(!value.contains("REEMPLAZAR", ignoreCase = true) &&
-                    !value.contains("TU_USER_POOL", ignoreCase = true) &&
-                    !value.contains("TU_CLIENT", ignoreCase = true)) {
+            require(
+                !value.contains("REEMPLAZAR", ignoreCase = true) &&
+                        !value.contains("TU_USER_POOL", ignoreCase = true) &&
+                        !value.contains("TU_CLIENT", ignoreCase = true)
+            ) {
                 "$key contiene un valor ficticio de Cognito"
             }
             val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"")
@@ -106,18 +108,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
-    // Room: runtime + extensiones Kotlin; compilador separado via KSP
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-    debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("net.openid:appauth:0.11.1")
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
@@ -128,7 +121,20 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation("com.google.dagger:hilt-android:2.60.1")
-    ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(platform(libs.androidx.compose.bom))
 
+    ksp(libs.androidx.room.compiler)
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
+
+    testImplementation("io.mockk:mockk:1.14.11")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation(libs.junit)
+
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
