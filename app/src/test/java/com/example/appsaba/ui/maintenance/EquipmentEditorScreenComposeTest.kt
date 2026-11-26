@@ -1,5 +1,9 @@
 package com.example.appsaba.ui.maintenance
 
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -16,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class EquipmentEditorScreenComposeTest {
     @get:Rule val compose = createComposeRule()
     private val vm = mockk<MaintenanceViewModel>(relaxed = true)
@@ -46,21 +50,27 @@ class EquipmentEditorScreenComposeTest {
 
     @Test fun editarEquipoConservaId() {
         compose.setContent { EquipmentEditorScreen(listOf(service), 2L, false, vm) }
-        compose.onNodeWithText("Editar").performClick()
-        compose.onNodeWithText("Guardar equipo").performClick()
+        compose.onNodeWithText("Editar").clickAction()
+        compose.onNodeWithText("Guardar equipo").clickAction()
         verify(exactly = 1) { vm.saveService(8L, 2L, "Barrera Norte", "barriers", "Acceso") }
     }
 
     @Test fun cambiarEstadoInvocaViewModel() {
         compose.setContent { EquipmentEditorScreen(listOf(service), 2L, false, vm) }
-        compose.onNodeWithText("degradado").performClick()
+        compose.onNodeWithText("degradado").clickAction()
         verify(exactly = 1) { vm.setServiceStatus(service, "degradado") }
     }
 
     @Test fun eliminarEquipoNecesitaConfirmacion() {
         compose.setContent { EquipmentEditorScreen(listOf(service), 2L, false, vm) }
-        compose.onNodeWithText("Eliminar").performClick()
-        compose.onNodeWithText("Cancelar").performClick()
+        compose.onNodeWithText("Eliminar").clickAction()
+        compose.onNodeWithText("Cancelar").clickAction()
         verify(exactly = 0) { vm.deleteService(any()) }
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }

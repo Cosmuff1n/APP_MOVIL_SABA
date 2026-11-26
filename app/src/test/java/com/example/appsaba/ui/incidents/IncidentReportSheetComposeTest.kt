@@ -1,12 +1,16 @@
 package com.example.appsaba.ui.incidents
 
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import com.example.appsaba.domain.model.Service
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -17,7 +21,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class IncidentReportSheetComposeTest {
     @get:Rule val compose = createComposeRule()
 
@@ -41,11 +45,17 @@ class IncidentReportSheetComposeTest {
             ReportIncidentSheet(onDismiss = {}, onSubmit = { published = it }, services = listOf(service))
         }
         compose.waitForIdle()
-        compose.onAllNodes(hasSetTextAction())[0].performTextInput("Falla reproducible")
-        compose.onNodeWithText("Publicar incidencia").performClick()
+        compose.onAllNodes(hasSetTextAction())[0].performTextReplacement("Falla reproducible")
+        compose.onNodeWithText("Publicar incidencia").clickAction()
         assertNotNull(published)
         assertEquals("51", published?.id)
         assertEquals("Barrera", published?.equipo)
         assertEquals("Falla reproducible", published?.observaciones)
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }

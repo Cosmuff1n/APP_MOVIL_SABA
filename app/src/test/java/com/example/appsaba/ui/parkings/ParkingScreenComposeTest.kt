@@ -1,5 +1,9 @@
 package com.example.appsaba.ui.parkings
 
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasSetTextAction
@@ -16,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class ParkingScreenComposeTest {
     @get:Rule val compose = createComposeRule()
     private val vm = mockk<ParkingViewModel>(relaxed = true)
@@ -46,31 +50,31 @@ class ParkingScreenComposeTest {
     @Test fun muestraRegistroYPermiteCambiarEstado() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
         compose.onNodeWithText("La Florida").assertExists()
-        compose.onNodeWithText("Desactivar").performClick()
+        compose.onNodeWithText("Desactivar").clickAction()
         verify(exactly = 1) { vm.toggleParking(row) }
     }
 
     @Test fun editarCargaCamposYGuardaUsandoIdExistente() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
-        compose.onNodeWithText("Editar").performClick()
-        compose.onNodeWithText("Guardar cambios").performClick()
+        compose.onNodeWithText("Editar").clickAction()
+        compose.onNodeWithText("Guardar cambios").clickAction()
         verify(exactly = 1) { vm.saveParking(7L, "La Florida", "Calle A", "La Florida", "50", "20") }
     }
 
     @Test fun eliminarPideConfirmacionAntesDeBorrar() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
-        compose.onNodeWithText("Eliminar").performClick()
+        compose.onNodeWithText("Eliminar").clickAction()
         compose.onNodeWithText("Confirmar eliminación").assertExists()
         verify(exactly = 0) { vm.deleteParking(any()) }
-        compose.onNodeWithText("Cancelar").performClick()
+        compose.onNodeWithText("Cancelar").clickAction()
         verify(exactly = 0) { vm.deleteParking(any()) }
     }
 
     @Test fun eliminarConfirmadoInvocaViewModel() {
         compose.setContent { ParkingScreen(listOf(row), false, vm) }
-        compose.onNodeWithText("Eliminar").performClick()
-        // El diálogo y la tarjeta contienen dos botones "Eliminar"; seleccionar el último.
-        compose.onAllNodes(androidx.compose.ui.test.hasText("Eliminar"))[1].performClick()
+        compose.onNodeWithText("Eliminar").clickAction()
+        compose.onNodeWithText("Confirmar eliminación").assertExists()
+        compose.onNode(androidx.compose.ui.test.hasText("Eliminar") and androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isDialog())).clickAction()
         verify(exactly = 1) { vm.deleteParking(row) }
     }
 
@@ -81,4 +85,10 @@ class ParkingScreenComposeTest {
         compose.onNodeWithText("Agregar").assertExists()
         compose.onNodeWithText("Guardar cambios").assertDoesNotExist()
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }

@@ -1,5 +1,9 @@
 package com.example.appsaba.ui.common
 
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -24,7 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class SabaDataScreenComposeTest {
     @get:Rule val compose = createComposeRule()
 
@@ -56,7 +60,7 @@ class SabaDataScreenComposeTest {
 
     @Test fun cambiarPestanaPresentaFormularioDeUsuarios() {
         setUpScreen()
-        compose.onNodeWithText("Usuarios").performClick()
+        compose.onNodeWithText("Usuarios").clickAction()
         compose.onNodeWithText("4. Perfiles locales").assertExists()
     }
 
@@ -73,4 +77,10 @@ class SabaDataScreenComposeTest {
         compose.onNodeWithText("Cerrar sesión").performClick()
         assertEquals(1, logout)
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }

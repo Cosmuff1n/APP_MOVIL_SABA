@@ -1,12 +1,20 @@
 package com.example.appsaba.ui.login
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.example.appsaba.ui.common.ScreenTestViewModelOwner
 import io.mockk.every
@@ -20,7 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class LoginScreenComposeTest {
     @get:Rule val compose = createComposeRule()
 
@@ -28,10 +36,12 @@ class LoginScreenComposeTest {
         var rut = ""
         var password = ""
         compose.setContent {
-            LoginContent(LoginUiState(), { rut = it }, { password = it }, {}, {}, {})
+            var state by remember { mutableStateOf(LoginUiState()) }
+            LoginContent(state, { rut = it; state = state.copy(rut = it) },
+                { password = it; state = state.copy(password = it) }, {}, {}, {})
         }
-        compose.onAllNodes(hasSetTextAction())[0].performTextInput("12.345.678-5")
-        compose.onAllNodes(hasSetTextAction())[1].performTextInput("clave")
+        compose.onAllNodes(hasSetTextAction())[0].performTextReplacement("12.345.678-5")
+        compose.onAllNodes(hasSetTextAction())[1].performTextReplacement("clave")
         assertEquals("12.345.678-5", rut)
         assertEquals("clave", password)
     }
@@ -57,15 +67,15 @@ class LoginScreenComposeTest {
 
     @Test fun eventoDeIngresoSeEjecuta() {
         var clicks = 0
-        compose.setContent { LoginContent(LoginUiState(), {}, {}, {}, { clicks++ }, {}) }
-        compose.onNodeWithText("Ingresar a terreno").performClick()
+        compose.setContent { LoginContent(LoginUiState(rut = "12.345.678-5", password = "Password123"), {}, {}, {}, { clicks++ }, {}) }
+        compose.onNodeWithText("Ingresar a terreno").clickAction()
         assertEquals(1, clicks)
     }
 
     @Test fun cognitoOpcionInvocaCallbackSinLoginReal() {
         var clicks = 0
         compose.setContent { LoginContent(LoginUiState(), {}, {}, {}, {}, {}, onCognitoClick = { clicks++ }) }
-        compose.onNodeWithText("Probar inicio de sesión con Cognito").performClick()
+        compose.onNodeWithText("Probar inicio de sesión con Cognito").clickAction()
         assertEquals(1, clicks)
     }
 
@@ -75,4 +85,10 @@ class LoginScreenComposeTest {
         compose.setContent { LoginScreen(viewModel = vm) }
         compose.onNodeWithText("App Saba").assertExists()
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }

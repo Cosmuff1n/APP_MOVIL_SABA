@@ -1,9 +1,12 @@
 package com.example.appsaba.ui.maintenance
 
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.example.appsaba.domain.model.Parking
 import com.example.appsaba.domain.model.Service
@@ -22,7 +25,7 @@ import org.robolectric.annotation.Config
 
 /** Ejercita selección, navegación, procedimiento y actualización de estado. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w600dp-h1200dp-mdpi")
 class MaintenanceDetailsComposeTest {
     @get:Rule val compose = createComposeRule()
 
@@ -51,25 +54,31 @@ class MaintenanceDetailsComposeTest {
 
     @Test fun detallePermiteVerYVolverDelProcedimiento() {
         show()
-        compose.onNodeWithText("Barrera entrada").performClick()
+        compose.onNodeWithText("Barrera entrada").clickAction()
         compose.onNodeWithText("Detalle del servicio").assertExists()
-        compose.onNodeWithText("Ver procedimiento").performClick()
+        compose.onNodeWithText("Ver procedimiento").clickAction()
         compose.onNodeWithText("Primera respuesta (guía general)").assertExists()
-        compose.onNodeWithText("Volver al estado operacional").performClick()
+        compose.onNodeWithText("Volver al estado operacional").clickAction()
         compose.onNodeWithText("Panel de mantenimiento").assertExists()
     }
 
     @Test fun detalleCambiaEstadoEnViewModel() {
         show()
-        compose.onNodeWithText("Barrera entrada").performClick()
-        compose.onNodeWithText("Operativo").performClick()
+        compose.onNodeWithText("Barrera entrada").clickAction()
+        compose.onNodeWithText("Operativo").clickAction()
         verify(exactly = 1) { maintenance.setServiceStatus(service, "operativo") }
     }
 
     @Test fun detalleOfreceFormularioDeIncidencia() {
         show()
-        compose.onNodeWithText("Barrera entrada").performClick()
-        compose.onNodeWithText("Reportar incidencia").performClick()
+        compose.onNodeWithText("Barrera entrada").clickAction()
+        compose.onNodeWithText("Reportar incidencia").clickAction()
         compose.onNodeWithText("Reportar un incidente").assertExists()
     }
+}
+
+/** Ejecuta el click semántico de un control habilitado, sin depender de coordenadas. */
+private fun SemanticsNodeInteraction.clickAction() {
+    assertIsEnabled()
+    performSemanticsAction(SemanticsActions.OnClick) { action -> check(action()) }
 }
