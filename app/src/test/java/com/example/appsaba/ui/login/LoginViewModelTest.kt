@@ -19,6 +19,7 @@ class LoginViewModelTest {
     val main = MainDispatcherRule()
     private lateinit var repo: LoginRepository
     private lateinit var vm: LoginViewModel
+
     @Before
     fun setup() {
         repo = mockk(relaxed = true)

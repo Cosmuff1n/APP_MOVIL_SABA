@@ -31,8 +31,10 @@ import com.example.appsaba.ui.components.RecordCard
 import com.example.appsaba.ui.components.ConfirmDelete
 
 @Composable
-internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Service>,
-                               parkingId: Long?, busy: Boolean, model: IncidentViewModel) {
+internal fun IncidentsAdminScreen(
+    incidents: List<Incident>, services: List<Service>,
+    parkingId: Long?, busy: Boolean, model: IncidentViewModel
+) {
     var serviceId by remember(parkingId) { mutableStateOf<Long?>(null) }
     var failure by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -43,8 +45,13 @@ internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Serv
     var solution by remember { mutableStateOf("") }
     var pendingDelete by remember { mutableStateOf<Incident?>(null) }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         Text("3. Incidencias", style = MaterialTheme.typography.titleLarge)
         if (parkingId == null) {
             Text("Primero debes crear un estacionamiento.")
@@ -54,20 +61,30 @@ internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Serv
             Text("Reportar una falla", style = MaterialTheme.typography.titleMedium)
             Text("Equipo: ${services.find { it.id == serviceId }?.name ?: "Elige uno"}")
             services.forEach { service ->
-                FilterChip(selected = serviceId == service.id, onClick = { serviceId = service.id },
+                FilterChip(
+                    selected = serviceId == service.id, onClick = { serviceId = service.id },
                     label = { Text(service.name) })
             }
-            OutlinedTextField(value = failure, onValueChange = { failure = it },
-                label = { Text("Tipo de falla") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = description, onValueChange = { description = it },
+            OutlinedTextField(
+                value = failure, onValueChange = { failure = it },
+                label = { Text("Tipo de falla") }, modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = description, onValueChange = { description = it },
                 label = { Text("Descripción (máx. 240 caracteres)") },
-                modifier = Modifier.fillMaxWidth(), minLines = 2)
-            OutlinedTextField(value = reporter, onValueChange = { reporter = it },
-                label = { Text("Nombre de quien reporta (opcional)") }, modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth(), minLines = 2
+            )
+            OutlinedTextField(
+                value = reporter,
+                onValueChange = { reporter = it },
+                label = { Text("Nombre de quien reporta (opcional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
             Text("Gravedad:")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("degradado", "fuera-servicio").forEach { status ->
-                    FilterChip(selected = severity == status, onClick = { severity = status },
+                    FilterChip(
+                        selected = severity == status, onClick = { severity = status },
                         label = { Text(status) })
                 }
             }
@@ -75,24 +92,38 @@ internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Serv
                 model.reportIncident(parkingId, serviceId, failure, description, severity, reporter)
             }) { Text("Registrar ticket local") }
         }
-        Text("Historial: ${incidents.size} · Abiertas: ${incidents.count { !it.isResolved }}",
-            style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Historial: ${incidents.size} · Abiertas: ${incidents.count { !it.isResolved }}",
+            style = MaterialTheme.typography.titleMedium
+        )
         if (incidents.isEmpty()) Text("Aún no hay incidencias registradas.")
         incidents.forEach { incident ->
             RecordCard("${incident.ticketCode} · ${if (incident.isResolved) "Resuelto" else "Abierto"}") {
                 Text("Equipo: ${services.find { it.id == incident.serviceId }?.name ?: incident.serviceId}")
                 Text("${incident.failureType} · ${incident.status}")
                 Text(incident.description)
-                Text("Reportó: ${incident.reporterName.ifBlank { "No indicado" }} · ${localTime(incident.reportedAt)}")
+                Text(
+                    "Reportó: ${incident.reporterName.ifBlank { "No indicado" }} · ${
+                        localTime(
+                            incident.reportedAt
+                        )
+                    }"
+                )
                 if (incident.isResolved) {
                     Text("Resuelto por: ${incident.resolvedByName.orEmpty()}")
                     Text(incident.resolutionDescription.orEmpty())
                 } else {
                     if (resolving?.id == incident.id) {
-                        OutlinedTextField(value = resolver, onValueChange = { resolver = it },
-                            label = { Text("Quién resolvió") }, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = solution, onValueChange = { solution = it },
-                            label = { Text("Qué hizo (máx. 300)") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(
+                            value = resolver, onValueChange = { resolver = it },
+                            label = { Text("Quién resolvió") }, modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = solution,
+                            onValueChange = { solution = it },
+                            label = { Text("Qué hizo (máx. 300)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(enabled = !busy, onClick = {
                                 model.resolveIncident(incident, resolver, solution)
@@ -105,12 +136,15 @@ internal fun IncidentsAdminScreen(incidents: List<Incident>, services: List<Serv
                         }) { Text("Resolver") }
                     }
                 }
-                TextButton(enabled = !busy, onClick = { pendingDelete = incident }) { Text("Eliminar ticket") }
+                TextButton(
+                    enabled = !busy,
+                    onClick = { pendingDelete = incident }) { Text("Eliminar ticket") }
             }
         }
     }
     pendingDelete?.let { incident ->
-        ConfirmDelete("el ticket '${incident.ticketCode}'",
+        ConfirmDelete(
+            "el ticket '${incident.ticketCode}'",
             onConfirm = { pendingDelete = null; model.deleteIncident(incident) },
             onCancel = { pendingDelete = null })
     }

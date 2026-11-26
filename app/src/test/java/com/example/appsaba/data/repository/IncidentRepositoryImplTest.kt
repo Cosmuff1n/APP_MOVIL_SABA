@@ -37,6 +37,7 @@ class IncidentRepositoryImplTest {
     }
 
     private fun validService() = Service(id = 3, parkingId = 4, name = "POS", type = "pos")
+
     @Test
     fun observesLocalOnlyWithRoomIdentity() = runTest {
         every { local.observeByParking(4) } returns flowOf(

@@ -116,7 +116,10 @@ fun ReportIncidentSheet(
 
             FormField("Equipo afectado") {
                 if (services.isEmpty()) {
-                    Text("No hay equipos en este parking. Agrégalos en Administrar datos locales.", color = TextMuted)
+                    Text(
+                        "No hay equipos en este parking. Agrégalos en Administrar datos locales.",
+                        color = TextMuted
+                    )
                 } else {
                     // Usar ID verdadero de Room, nunca nombres ficticios del Preview.
                     val labels = services.map { "${it.name} (#${it.id})" }

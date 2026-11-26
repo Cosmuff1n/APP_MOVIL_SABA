@@ -12,6 +12,7 @@ class IncidentRemoteDataSourceImplTest {
     private lateinit var api: BffIncidentApiService
     private lateinit var subject: IncidentRemoteDataSourceImpl
     private val dto = BffIncidentDto(id = 1, ticketCode = "INC-1", parkingId = 2, serviceId = 3)
+
     @Before
     fun setUp() {
         api = mockk(); subject = IncidentRemoteDataSourceImpl(api)

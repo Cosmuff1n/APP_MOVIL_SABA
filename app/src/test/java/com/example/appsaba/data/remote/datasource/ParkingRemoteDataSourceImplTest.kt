@@ -14,6 +14,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 class ParkingRemoteDataSourceImplTest {
     private lateinit var api: Ec2ParkingApiService
     private lateinit var subject: ParkingRemoteDataSourceImpl
+
     @Before
     fun setUp() {
         api = mockk(); subject = ParkingRemoteDataSourceImpl(api)

@@ -47,8 +47,8 @@ class UsersViewModelTest {
 
     @Test
     fun createsUserWithTrimmedNameAndNullableRut() = runTest {
-        subscribe(); vm.saveUser(null, "  Carlos ", "  ", " operador ", 3); runCurrent()
-        coVerify { repo.insert(match { it.name == "Carlos" && it.rut == null && it.role == "operador" && it.assignedParkingId == 3L }) }
+        subscribe(); vm.saveUser(null, "  Charlie ", "  ", " operador ", 3); runCurrent()
+        coVerify { repo.insert(match { it.name == "Charlie" && it.rut == null && it.role == "operador" && it.assignedParkingId == 3L }) }
     }
 
     @Test

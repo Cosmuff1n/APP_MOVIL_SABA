@@ -11,6 +11,7 @@ import org.junit.Test
 class LoginRepositoryImplTest {
     private lateinit var api: AuthApiService
     private lateinit var subject: LoginRepositoryImpl
+
     @Before
     fun setup() {
         api = mockk(); subject = LoginRepositoryImpl(api)

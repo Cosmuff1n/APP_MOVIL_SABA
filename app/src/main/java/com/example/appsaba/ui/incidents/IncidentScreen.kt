@@ -116,8 +116,8 @@ fun IncidentScreen(cognitoAccessToken: String? = null) {
         Ticket(
             id = incident.remoteId?.let { "remote:$it" } ?: incident.id.toString(),
             equipo = if (incident.remoteId != null) "Servicio remoto #${incident.serviceId}"
-                     else services.firstOrNull { it.id == incident.serviceId }?.name
-                         ?: "Equipo #${incident.serviceId}",
+            else services.firstOrNull { it.id == incident.serviceId }?.name
+                ?: "Equipo #${incident.serviceId}",
             tipoFalla = incident.failureType,
             estado = when (incident.status) {
                 "fuera-servicio" -> EstadoEquipo.FUERA_DE_SERVICIO
@@ -204,7 +204,9 @@ internal fun IncidentsContent(
         if (parkings.size > 1) {
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     parkings.forEach { parking ->
@@ -220,7 +222,11 @@ internal fun IncidentsContent(
         if (remoteAvailable) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("BFF · Consulta integrada", color = TextMuted, modifier = Modifier.weight(1f))
+                    Text(
+                        "BFF · Consulta integrada",
+                        color = TextMuted,
+                        modifier = Modifier.weight(1f)
+                    )
                     TextButton(onClick = onRefreshRemote, enabled = !remoteBusy) {
                         Text(if (remoteBusy) "Consultando..." else "Actualizar")
                     }
@@ -232,7 +238,13 @@ internal fun IncidentsContent(
         if (allowLocalReport) {
             item { ReportButton(onClick = onOpenSheet) }
         } else {
-            item { Text("Registro remoto pendiente de correspondencia válida de serviceId; el formulario local no se usa para este parking.", fontSize = 12.sp, color = TextMuted) }
+            item {
+                Text(
+                    "Registro remoto pendiente de correspondencia válida de serviceId; el formulario local no se usa para este parking.",
+                    fontSize = 12.sp,
+                    color = TextMuted
+                )
+            }
         }
         item {
             Column {
