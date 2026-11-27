@@ -75,3 +75,5 @@ saba.db-shm
 /springboot/parking/config/local.properties
 /springboot/incidents/config/local.properties
 
+# SABA - Android release signing (private)
+/app/keystore/

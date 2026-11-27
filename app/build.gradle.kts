@@ -77,6 +77,23 @@ android {
         }
     }
 
+    // SABA release signing: private local credentials (not tracked by Git).
+    val keystorePropertiesFile = file("keystore/upload-keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+    }
+
+    signingConfigs {
+        create("upload") {
+            storeType = "JKS"
+            storeFile = file(keystoreProperties.getProperty("storeFile", "keystore/upload-keystore.jks"))
+            storePassword = keystoreProperties.getProperty("storePassword", "")
+            keyAlias = keystoreProperties.getProperty("keyAlias", "upload")
+            keyPassword = keystoreProperties.getProperty("keyPassword", "")
+        }
+    }
+
     buildTypes {
 
         getByName("debug") {
@@ -84,6 +101,7 @@ android {
         }
 
         release {
+            signingConfig = signingConfigs.getByName("upload")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
