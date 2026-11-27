@@ -104,7 +104,7 @@ android {
             signingConfig = signingConfigs.getByName("upload")
             optimization {
                 enable = false
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                packageScope = setOf("androidx.**", "   kotlin.**", "kotlinx.**")
             }
         }
     }
