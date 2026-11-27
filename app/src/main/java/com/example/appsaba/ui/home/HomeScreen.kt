@@ -315,7 +315,7 @@ private fun formatEpoch(epochSeconds: Long): String {
 /** Complemento visual, no sustituye el Home de la compañera. */
 @Composable
 private fun AmazonExtra(accessToken: String?) {
-    if (BuildConfig.DEBUG && !LocalInspectionMode.current) {
+    if (!LocalInspectionMode.current) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
